@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit de Vendas — Receita Previsível · Psiquiatras SP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16191F; --bg:#ECEFF3; --panel:#FFFFFF; --panel2:#F6F8FA; --line:#DCE1E8;
+  --muted:#69727E; --rail:#10141A; --rail2:#171C24; --rail-line:#262D38; --rail-txt:#AEB7C4;
+  --accent:#0E7C66; --accent2:#15B98A; --accent-soft:#E1F2EC;
+  --quente:#D8543A; --quente-bg:#FBE7E0; --morno:#B8810F; --morno-bg:#F8EFD6; --frio:#5B7895; --frio-bg:#E7EDF3;
+  --shadow:0 1px 2px rgba(20,25,33,.06),0 8px 24px rgba(20,25,33,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Spline Sans",system-ui,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.disp{font-family:"Space Grotesk",sans-serif}
+h1,h2,h3,h4{font-family:"Space Grotesk",sans-serif;margin:0;font-weight:600;letter-spacing:-.01em}
+a{color:var(--accent)}
+button{font-family:inherit;cursor:pointer}
+.eyebrow{font-family:"Space Grotesk";font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* layout */
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.rail{background:var(--rail);color:var(--rail-txt);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;border-right:1px solid var(--rail-line);overflow-y:auto}
+.rail-brand{padding:20px 18px 14px;border-bottom:1px solid var(--rail-line)}
+.rail-brand .k{font-family:"Space Grotesk";font-size:10px;letter-spacing:.2em;color:#5E6B7B;text-transform:uppercase}
+.rail-brand h1{color:#fff;font-size:18px;margin-top:4px;line-height:1.1}
+.rail-brand .s{font-size:11.5px;color:#7C8796;margin-top:5px}
+.nav{padding:12px 10px;display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;color:var(--rail-txt);padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:500;transition:.12s}
+.nav button .ic{width:16px;text-align:center;opacity:.8}
+.nav button:hover{background:var(--rail2);color:#fff}
+.nav button.on{background:var(--accent);color:#fff}
+.nav button.on .ic{opacity:1}
+.spine{margin:6px 12px 4px;padding:12px 0 6px;border-top:1px solid var(--rail-line)}
+.spine .lbl{font-family:"Space Grotesk";font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#566273;padding:0 2px 8px}
+.spine .step{display:flex;align-items:center;gap:9px;padding:5px 4px;font-size:12px;color:#8B96A5;cursor:pointer;border-radius:6px}
+.spine .step:hover{color:#fff;background:var(--rail2)}
+.spine .step .n{font-family:"JetBrains Mono";font-size:10px;color:#fff;background:#2A323D;width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.spine .step .ct{margin-left:auto;font-family:"JetBrains Mono";font-size:11px;color:#fff;background:#222933;padding:1px 7px;border-radius:20px}
+.rail-data{margin-top:auto;padding:12px;border-top:1px solid var(--rail-line);display:flex;flex-direction:column;gap:6px}
+.rail-data button{background:var(--rail2);border:1px solid var(--rail-line);color:var(--rail-txt);border-radius:7px;padding:7px 10px;font-size:11.5px;display:flex;gap:8px;align-items:center}
+.rail-data button:hover{color:#fff;border-color:#3a434f}
+
+main{padding:0;min-width:0}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(236,239,243,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:16px 30px;display:flex;align-items:baseline;gap:14px}
+.topbar h2{font-size:21px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.wrap{padding:24px 30px 60px;max-width:1180px}
+.view{display:none}.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* cards & generic */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(4,1fr)}
+.kpi{padding:16px 18px}
+.kpi .l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:"Space Grotesk";font-weight:600}
+.kpi .v{font-family:"Space Grotesk";font-size:30px;font-weight:600;margin-top:6px;line-height:1}
+.kpi .v small{font-size:14px;color:var(--muted);font-weight:500}
+.kpi .d{font-size:11.5px;color:var(--muted);margin-top:6px}
+.accentbar{height:3px;border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+/* engine 3 motors */
+.motors{grid-template-columns:repeat(3,1fr)}
+.motor{padding:18px;border-top:3px solid}
+.motor h3{font-size:15px;display:flex;gap:8px;align-items:center}
+.motor p{color:var(--muted);font-size:12.5px;margin:8px 0 0}
+.motor .tag{display:inline-block;margin-top:10px;font-size:11px;font-family:"JetBrains Mono";padding:3px 9px;border-radius:20px}
+
+/* sectionhead */
+.sect{display:flex;align-items:center;gap:12px;margin:30px 0 14px}
+.sect .n{font-family:"JetBrains Mono";font-size:12px;color:#fff;background:var(--ink);width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.sect h3{font-size:17px}
+.sect .ln{flex:1;height:1px;background:var(--line)}
+
+/* kanban */
+.board{display:grid;grid-template-columns:repeat(6,minmax(210px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel2);border:1px solid var(--line);border-radius:12px;min-height:120px;display:flex;flex-direction:column}
+.col.drag{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--accent-soft)}
+.col-h{padding:11px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;position:sticky;top:0}
+.col-h .n{font-family:"JetBrains Mono";font-size:10px;background:var(--ink);color:#fff;width:17px;height:17px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.col-h .t{font-family:"Space Grotesk";font-weight:600;font-size:12.5px}
+.col-h .c{margin-left:auto;font-family:"JetBrains Mono";font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:1px 7px;border-radius:20px}
+.col-b{padding:8px;display:flex;flex-direction:column;gap:7px;flex:1}
+.lead{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--frio);border-radius:9px;padding:9px 10px;cursor:grab;transition:.12s}
+.lead:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.lead.q{border-left-color:var(--quente)} .lead.m{border-left-color:var(--morno)} .lead.f{border-left-color:var(--frio)}
+.lead .nm{font-weight:600;font-size:12.5px;font-family:"Space Grotesk";line-height:1.25}
+.lead .mt{display:flex;gap:6px;align-items:center;margin-top:5px;font-size:10.5px;color:var(--muted)}
+.lead .pill{font-size:9.5px;font-family:"JetBrains Mono";padding:1px 6px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.pill.q{background:var(--quente-bg);color:var(--quente)} .pill.m{background:var(--morno-bg);color:var(--morno)} .pill.f{background:var(--frio-bg);color:var(--frio)}
+.lead .nx{margin-top:6px;font-size:10.5px;color:var(--accent);font-family:"JetBrains Mono"}
+.lead .nx.due{color:var(--quente)}
+
+/* filters */
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.bar input,.bar select{font-family:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink)}
+.bar input{flex:1;min-width:160px}
+.chip{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(16,20,26,.42);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(480px,94vw);background:var(--bg);box-shadow:-12px 0 40px rgba(16,20,26,.2);transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
+.drawer.on{transform:none}
+.dh{padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+.dh .x{position:absolute;top:16px;right:18px;border:1px solid var(--line);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:16px;color:var(--muted)}
+.dh h3{font-size:18px;padding-right:36px}
+.db{padding:18px 22px;display:flex;flex-direction:column;gap:16px}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:12.5px}
+.kv .k{color:var(--muted);font-family:"Space Grotesk";font-weight:500}
+.kv a{word-break:break-all}
+.obsbox{background:var(--quente-bg);border:1px solid #F0CFC2;border-radius:10px;padding:12px;font-size:12.5px;color:#7A3A28}
+.obsbox.m{background:var(--morno-bg);border-color:#E8D6A6;color:#6E5310}
+.obsbox.f{background:var(--frio-bg);border-color:#CDDBE6;color:#3C566B}
+.fld label{font-size:11px;font-family:"Space Grotesk";font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px}
+.fld input,.fld textarea,.fld select{width:100%;font-family:inherit;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink)}
+.fld textarea{min-height:74px;resize:vertical}
+.stagerow{display:flex;gap:6px;flex-wrap:wrap}
+.stagerow button{font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.stagerow button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.qa{display:flex;gap:8px;flex-wrap:wrap}
+.qa a{flex:1;min-width:120px;text-align:center;text-decoration:none;font-size:12px;font-weight:600;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.qa a:hover{border-color:var(--accent);color:var(--accent)}
+
+/* checklist */
+.check{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.check:last-child{border:0}
+.check input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent);flex-shrink:0}
+.check.done span{color:var(--muted);text-decoration:line-through}
+
+/* playbook stage */
+.stage{margin-bottom:14px;overflow:hidden}
+.stage-h{display:flex;gap:14px;align-items:center;padding:16px 20px;cursor:pointer}
+.stage-h .num{font-family:"Space Grotesk";font-size:22px;font-weight:700;color:var(--accent);width:34px}
+.stage-h .ti{flex:1}
+.stage-h .ti h3{font-size:16px}
+.stage-h .ti .g{color:var(--muted);font-size:12.5px;margin-top:2px}
+.stage-h .tg{font-family:"JetBrains Mono";font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+.stage-h .car{color:var(--muted);transition:.2s;font-size:13px}
+.stage.open .stage-h .car{transform:rotate(90deg)}
+.stage-body{display:none;padding:0 20px 20px;border-top:1px solid var(--line)}
+.stage.open .stage-body{display:block}
+.block{margin-top:16px}
+.block .bh{font-family:"Space Grotesk";font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.book{background:var(--panel2);border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:12px 14px;font-size:13px}
+.book .src{display:block;margin-top:6px;font-size:11px;color:var(--muted);font-style:italic}
+ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
+.pitfall{display:flex;gap:9px;font-size:12.5px;padding:6px 0;color:#7A3A28}
+.adv{background:var(--accent-soft);border:1px solid #BEE2D6;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;gap:9px;align-items:flex-start}
+.adv b{font-family:"Space Grotesk"}
+
+/* scripts */
+.script{margin-bottom:12px}
+.script .sh{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer}
+.script .sh .ph{font-family:"JetBrains Mono";font-size:10px;color:#fff;padding:2px 8px;border-radius:5px}
+.script .sh h4{font-size:13.5px;flex:1}
+.script .sh .cp{font-size:11.5px;color:var(--accent);border:1px solid var(--line);border-radius:7px;padding:5px 11px;background:var(--panel)}
+.script .sb{display:none;padding:0 16px 16px}
+.script.open .sb{display:block}
+.script pre{white-space:pre-wrap;font-family:"Spline Sans";font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;color:#2A2F38;line-height:1.6}
+.script .tip{font-size:11.5px;color:var(--muted);margin-top:8px}
+
+/* metrics / calc */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.funnel{display:flex;flex-direction:column;gap:6px}
+.fstep{display:flex;align-items:center;gap:10px}
+.fstep .bar{height:32px;border-radius:7px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:flex;align-items:center;padding:0 10px;color:#fff;font-family:"JetBrains Mono";font-size:12px;min-width:42px;transition:.4s}
+.fstep .lb{font-size:12px;width:120px;flex-shrink:0;color:var(--muted)}
+.fstep .rt{font-family:"JetBrains Mono";font-size:11px;color:var(--muted)}
+.crow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.crow:last-child{border:0}
+.crow input{width:88px;text-align:right;font-family:"JetBrains Mono";font-size:13px;padding:6px 9px;border:1px solid var(--line);border-radius:8px}
+.bignum{font-family:"Space Grotesk";font-size:40px;font-weight:700;color:var(--accent);line-height:1}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.2s;z-index:80}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.note{font-size:12px;color:var(--muted)}
+.mtop{display:none}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  .rail{position:fixed;left:0;top:0;width:236px;transform:translateX(-100%);transition:.2s;z-index:60}
+  .rail.on{transform:none}
+  .mtop{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--rail);color:#fff;position:sticky;top:0;z-index:30}
+  .mtop button{background:none;border:0;color:#fff;font-size:20px}
+  .kpis{grid-template-columns:repeat(2,1fr)} .motors{grid-template-columns:1fr} .calc{grid-template-columns:1fr}
+  .wrap,.topbar{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body>
+<div class="mtop"><button onclick="document.getElementById('rail').classList.toggle('on')">☰</button><b class="disp">Cockpit de Vendas</b></div>
+<div class="app">
+  <aside class="rail" id="rail">
+    <div class="rail-brand">
+      <div class="k">Receita Previsível</div>
+      <h1>Cockpit de Vendas</h1>
+      <div class="s">Prospecção de psiquiatras · Grande São Paulo</div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-v="painel" class="on"><span class="ic">◆</span> Painel</button>
+      <button data-v="funil"><span class="ic">▦</span> Funil (Pipeline)</button>
+      <button data-v="etapas"><span class="ic">≣</span> Etapas / Playbook</button>
+      <button data-v="scripts"><span class="ic">❝</span> Scripts</button>
+      <button data-v="metricas"><span class="ic">▲</span> Métricas & Meta</button>
+      <button data-v="livro"><span class="ic">▣</span> O Livro</button>
+    </nav>
+    <div class="spine">
+      <div class="lbl">As 6 etapas</div>
+      <div id="spine"></div>
+    </div>
+    <div class="rail-data">
+      <button onclick="exportData()">⬇ Exportar dados (.json)</button>
+      <button onclick="document.getElementById('imp').click()">⬆ Importar dados</button>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+      <button onclick="resetData()">↺ Resetar para os 155 leads</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar"><h2 id="vtitle">Painel</h2><span class="sub" id="vsub">Visão geral da sua máquina de receita</span></div>
+    <div class="wrap">
+
+      <!-- PAINEL -->
+      <section class="view on" id="v-painel">
+        <div class="grid kpis" id="kpis"></div>
+        <div class="sect"><span class="n">★</span><h3>Os 3 motores de lead — Sementes, Redes e Alvos</h3><span class="ln"></span></div>
+        <div class="grid motors">
+          <div class="card motor" style="border-color:var(--accent)">
+            <h3>🌱 Sementes</h3>
+            <p>Indicações de psiquiatras satisfeitos (eles se conhecem!), SEO e seu conteúdo de autoridade. Lentas pra brotar, mas <b>convertem mais e custam menos</b>.</p>
+            <span class="tag" style="background:var(--accent-soft);color:var(--accent)">Construir no pós-venda →</span>
+          </div>
+          <div class="card motor" style="border-color:var(--morno)">
+            <h3>🕸 Redes</h3>
+            <p>Seu conteúdo orgânico, tráfego e eventos. A rede ampla que você joga pra pegar volume e aquecer quem ainda não te conhece.</p>
+            <span class="tag" style="background:var(--morno-bg);color:var(--morno)">Alimenta o topo do funil</span>
+          </div>
+          <div class="card motor" style="border-color:var(--quente)">
+            <h3>🎯 Alvos</h3>
+            <p>Esta lista do Apify. Caça cirúrgica via Cold Calling 2.0. <b>É onde você está agora</b> — controle total, esforço X → resultado Y.</p>
+            <span class="tag" style="background:var(--quente-bg);color:var(--quente)">Foco imediato ↓</span>
+          </div>
+        </div>
+        <div class="sect"><span class="n">!</span><h3>Próximas ações (leads com data marcada)</h3><span class="ln"></span></div>
+        <div class="card pad" id="nextactions"></div>
+        <div class="sect"><span class="n">✓</span><h3>Princípios-mestre (a versão solo do "especialize, especialize, especialize")</h3><span class="ln"></span></div>
+        <div class="card pad"><ul class="li" id="principles"></ul></div>
+      </section>
+
+      <!-- FUNIL -->
+      <section class="view" id="v-funil">
+        <div class="bar">
+          <input id="search" placeholder="Buscar por nome ou bairro…" oninput="renderBoard()">
+          <button class="chip on" data-tier="all" onclick="setTier(this)">Todos</button>
+          <button class="chip" data-tier="quente" onclick="setTier(this)">🔥 Quentes</button>
+          <button class="chip" data-tier="morno" onclick="setTier(this)">🌤 Mornos</button>
+          <button class="chip" data-tier="frio" onclick="setTier(this)">❄ Frios</button>
+        </div>
+        <div class="board" id="board"></div>
+        <p class="note" style="margin-top:12px">Arraste os cards entre as colunas (no desktop) ou abra um lead e use o seletor de etapa. Tudo é salvo automaticamente no seu navegador.</p>
+      </section>
+
+      <!-- ETAPAS -->
+      <section class="view" id="v-etapas">
+        <p class="note" style="margin-bottom:16px">Cada etapa traz o <b>princípio do Receita Previsível</b> aplicado ao seu caso, o <b>checklist</b>, o <b>gatilho de avanço</b> (o que precisa acontecer pra ir pra próxima) e as <b>armadilhas</b>. Clique para expandir.</p>
+        <div id="playbook"></div>
+      </section>
+
+      <!-- SCRIPTS -->
+      <section class="view" id="v-scripts">
+        <p class="note" style="margin-bottom:16px">Princípio do livro: <b>texto puro, curto, lido no celular, uma pergunta fácil, honesto, com prova social</b>. Personalize a 1ª linha com o ponto fraco real do lead (está na ficha dele). Clique em <b>Copiar</b>.</p>
+        <div id="scripts"></div>
+      </section>
+
+      <!-- METRICAS -->
+      <section class="view" id="v-metricas">
+        <div class="sect" style="margin-top:4px"><span class="n">▲</span><h3>Seu funil agora</h3><span class="ln"></span></div>
+        <div class="card pad"><div class="funnel" id="funnel"></div></div>
+        <div class="sect"><span class="n">∑</span><h3>Calculadora de Receita Previsível — "esforço X → resultado Y"</h3><span class="ln"></span></div>
+        <div class="grid calc">
+          <div class="card pad">
+            <div class="eyebrow" style="margin-bottom:10px">Sua meta e suas taxas (ajuste)</div>
+            <div class="crow"><span>Meta de novos clientes / mês</span><input id="c_goal" type="number" value="4" oninput="calc()"></div>
+            <div class="crow"><span>Taxa de resposta por toque</span><input id="c_resp" type="number" value="10" oninput="calc()"><span class="note">%</span></div>
+            <div class="crow"><span>Resposta → call de diagnóstico</span><input id="c_call" type="number" value="40" oninput="calc()"><span class="note">%</span></div>
+            <div class="crow"><span>Call → proposta</span><input id="c_prop" type="number" value="60" oninput="calc()"><span class="note">%</span></div>
+            <div class="crow"><span>Proposta → fechamento</span><input id="c_close" type="number" value="30" oninput="calc()"><span class="note">%</span></div>
+            <div class="crow"><span>Dias úteis no mês</span><input id="c_days" type="number" value="20" oninput="calc()"></div>
+          </div>
+          <div class="card pad" id="calcout"></div>
+        </div>
+        <div class="card pad" style="margin-top:16px">
+          <div class="eyebrow" style="margin-bottom:8px">Receita projetada</div>
+          <div id="revout"></div>
+          <p class="note" style="margin-top:10px">Premissas editáveis acima. Modelo: R$ 2.000 de setup por cliente + R$ 1.000/mês de recorrência. A recorrência acumula — é o que torna a receita <b>previsível</b>.</p>
+        </div>
+      </section>
+
+      <!-- LIVRO -->
+      <section class="view" id="v-livro">
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="eyebrow">Receita Previsível · Aaron Ross & Marylou Tyler</div>
+          <h3 style="font-size:18px;margin:8px 0 6px">As 6 ideias que estruturam este cockpit</h3>
+          <p class="note">Resumo aplicado. As ideias estão reorganizadas para o seu contexto (prestador solo de web design + SEO local vendendo para psiquiatras).</p>
+        </div>
+        <div id="bookideas"></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const LEADS_SEED = [{"id": "L001", "nome": "Dra. Denise Gobo", "categoria": "Psiquiatra", "bairro": "Moema", "telefone": "+55 11 95210-8946", "whatsapp": "+55 11 95210-8946", "email": "", "instagram": "", "site": "", "avaliacoes": 33, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L002", "nome": "Simone N. Marangoni", "categoria": "Psiquiatra", "bairro": "Moema", "telefone": "+55 11 97991-7990", "whatsapp": "+55 11 97991-7990", "email": "", "instagram": "", "site": "", "avaliacoes": 10, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L003", "nome": "Dra. Luciana Rêgo", "categoria": "Psiquiatra", "bairro": "Vila Nova Conceição", "telefone": "+55 11 98137-2777", "whatsapp": "+55 11 98137-2777", "email": "lucianarego.psiquiatria@gmail.com", "instagram": "", "site": "http://www.dralucianarego.com.br/", "avaliacoes": 19, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L004", "nome": "Dra. Giovana Guariento", "categoria": "Psiquiatra", "bairro": "Itaim Bibi", "telefone": "+55 11 96479-4894", "whatsapp": "+55 11 96479-4894", "email": "", "instagram": "@dragiovanaguariento", "site": "https://www.dragiovanaguariento.com.br/", "avaliacoes": 54, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L005", "nome": "Dr. Rafael Latorraca (Clinintegra)", "categoria": "Psiquiatra", "bairro": "Moema", "telefone": "+55 11 99266-2914", "whatsapp": "+55 11 99266-2914", "email": "atendimento@clinintegra.com.br", "instagram": "@clinintegra", "site": "http://www.clinintegra.com.br/", "avaliacoes": 71, "nota": 4.9, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L006", "nome": "Dra. Emanuelle Garmes Pires", "categoria": "Psiquiatra", "bairro": "Vila Nova Conceição", "telefone": "", "whatsapp": "", "email": "", "instagram": "@dra.emanuellegarmes", "site": "Doctoralia", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Poucas avaliações (1) — gancho de Google Meu Negócio.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L007", "nome": "Dra. Luana Sombra", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 97240-1993", "whatsapp": "+55 11 97240-1993", "email": "", "instagram": "", "site": "https://www.draluanasombra.com.br/", "avaliacoes": 23, "nota": 4.7, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L008", "nome": "Dra. Sheila Hauck Barbosa", "categoria": "Psiquiatra", "bairro": "Vila Nova Conceição", "telefone": "+55 11 91489-6684", "whatsapp": "+55 11 91489-6684", "email": "", "instagram": "@drasheilahauck", "site": "https://www.drasheilahauck.com/", "avaliacoes": 24, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L009", "nome": "Dra. Thuani Campanha", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 94315-4444", "whatsapp": "+55 11 94315-4444", "email": "", "instagram": "", "site": "https://www.drathuanicampanha.com.br/", "avaliacoes": 3, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Poucas avaliações (3) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L010", "nome": "Dra. Inah C. G. F. Proença", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 3672-2021", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 2, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Poucas avaliações (2) — gancho de Google Meu Negócio. Sem Instagram vinculado. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L011", "nome": "Dra. Danielle Borges", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 91314-8465", "whatsapp": "+55 11 91314-8465", "email": "", "instagram": "", "site": "http://www.dradaniellertborges.com.br/", "avaliacoes": 35, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L012", "nome": "Dra. Veronica Moraes", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 19 99729-7257", "whatsapp": "+55 19 99729-7257", "email": "", "instagram": "", "site": "http://www.draveronicamoraes.com.br/", "avaliacoes": 82, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L013", "nome": "Dr. Dailton Jorge Barcelos", "categoria": "Psiquiatra", "bairro": "Vila Nova Conceição", "telefone": "+55 11 98211-4992", "whatsapp": "+55 11 98211-4992", "email": "", "instagram": "", "site": "http://drdailtonbarcelos.com.br/", "avaliacoes": 5, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Poucas avaliações (5) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L014", "nome": "Reifur Psiquiatria", "categoria": "Psiquiatra", "bairro": "Vila Nova Conceição", "telefone": "+55 11 3845-9454", "whatsapp": "", "email": "", "instagram": "@reifurpsiquiatria", "site": "Doctoralia", "avaliacoes": 62, "nota": 4.9, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L015", "nome": "Dra. Bianca Brunelli Eduardo", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 99364-1323", "whatsapp": "+55 11 99364-1323", "email": "", "instagram": "@dra.biancabrunellieduardo", "site": "http://biancabrunellieduardo.com.br/", "avaliacoes": 7, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L016", "nome": "Dr. Alexandre A. Loch", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 97193-9825", "whatsapp": "+55 11 97193-9825", "email": "", "instagram": "", "site": "Linktree", "avaliacoes": 6, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só Linktree. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L017", "nome": "Dr. Felipe Carnevale", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 97257-9707", "whatsapp": "+55 11 97257-9707", "email": "", "instagram": "", "site": "https://www.drfelipecarnevale.com/", "avaliacoes": 31, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L018", "nome": "DOMUS HEALTH", "categoria": "Psiquiatra", "bairro": "Perdizes/Pompeia", "telefone": "+55 11 97554-1234", "whatsapp": "+55 11 97554-1234", "email": "Domus.health.center@gmail.com", "instagram": "@domus.health.center", "site": "http://www.domushealthcenter.com/", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Poucas avaliações (1) — gancho de Google Meu Negócio.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L019", "nome": "Dr. Ariel Bogochvol", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 3865-1163", "whatsapp": "", "email": "soelistepanenco@gmail.com", "instagram": "", "site": "Doctoralia", "avaliacoes": 5, "nota": 5.0, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Poucas avaliações (5) — gancho de Google Meu Negócio. Sem Instagram vinculado. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L020", "nome": "Antônio Cyrino", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 92089-8902", "whatsapp": "+55 11 92089-8902", "email": "contatoantoniocyrino@gmail.com", "instagram": "", "site": "http://antoniocyrino.com.br/", "avaliacoes": 32, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L021", "nome": "Dr. Caio Montefusco", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 98322-7516", "whatsapp": "+55 11 98322-7516", "email": "contato@drcaiomontefusco.com", "instagram": "@caiomontefusco.psiquiatra", "site": "https://www.drcaiomontefusco.com/", "avaliacoes": 114, "nota": 5.0, "tier": "frio", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L022", "nome": "Consultório Dra. Ana Hounie", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 3666-7724", "whatsapp": "", "email": "ana.hounie@gmail.com", "instagram": "@consultoriodraanahounie", "site": "http://www.anahounie.com/", "avaliacoes": 13, "nota": 3.8, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Nota baixa (3.8) — gestão de reputação. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L023", "nome": "Dra. Daniela Casselhas", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 91878-9448", "whatsapp": "+55 11 91878-9448", "email": "danicasselhas@gmail.com", "instagram": "", "site": "https://dradanielacasselhas.com.br/", "avaliacoes": 35, "nota": 4.9, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L024", "nome": "Gabriel Luniere", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 51 99351-4115", "whatsapp": "+55 51 99351-4115", "email": "", "instagram": "", "site": "https://www.gabriellunierepsiquiatra.com.br/", "avaliacoes": 23, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L025", "nome": "Dra. Katya Zolcsak", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 94482-1149", "whatsapp": "+55 11 94482-1149", "email": "", "instagram": "@katyapsiquiatra", "site": "http://www.katyapsiquiatra.com.br/", "avaliacoes": 26, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L026", "nome": "Humanamente (Dr. Caio Cortes)", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 95214-2695", "whatsapp": "+55 11 95214-2695", "email": "", "instagram": "@drcaiocortes", "site": "http://www.humanamente.com.br/", "avaliacoes": 47, "nota": 4.7, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L027", "nome": "Dr. Henrique Peres de Vasconcellos", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 91111-6185", "whatsapp": "+55 11 91111-6185", "email": "henrique.peres.psiq@gmail.com", "instagram": "", "site": "http://psiquiatrahenriqueperes.com.br/", "avaliacoes": 12, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L028", "nome": "Dra. Natália Magno Araújo Ferreira", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 91702-8883", "whatsapp": "+55 11 91702-8883", "email": "nataliamagno@gmail.com", "instagram": "@nataliamagno.psiquiatra", "site": "http://www.nataliamagno.com.br/", "avaliacoes": 52, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L029", "nome": "Dra. Aline Gabriele", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Poucas avaliações (1) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L030", "nome": "Dra. Eloisa Muraroto", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 95221-6804", "whatsapp": "+55 11 95221-6804", "email": "", "instagram": "", "site": "https://psiquiatraeloisamuraroto.com.br/", "avaliacoes": 24, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L031", "nome": "Dr. Diogo Veiga", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 98863-8475", "whatsapp": "+55 11 98863-8475", "email": "diogolveiga@gmail.com", "instagram": "", "site": "https://drdiogoveiga.com.br/", "avaliacoes": 13, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L032", "nome": "Hugo Sanches", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 99970-5199", "whatsapp": "+55 11 99970-5199", "email": "", "instagram": "", "site": "", "avaliacoes": 27, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L033", "nome": "Dr. Guilherme Prado Mattar", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "Doctoralia", "avaliacoes": 2, "nota": 5.0, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Poucas avaliações (2) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L034", "nome": "Dra. Tatiana Scabello", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 99450-4082", "whatsapp": "+55 11 99450-4082", "email": "", "instagram": "@dratatianascabello", "site": "http://dratatiscabello.com.br/", "avaliacoes": 10, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L035", "nome": "Dra. Helena Masseo de Castro", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 99912-7085", "whatsapp": "+55 11 99912-7085", "email": "hmasseoconsultorio@gmail.com", "instagram": "@hmconsultoriopsiquiatrico", "site": "https://www.helenamasseodecastro.com/", "avaliacoes": 42, "nota": 4.9, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L036", "nome": "Dr. Carlos Augusto Scheffer Ribeiro", "categoria": "Psiquiatra", "bairro": "Santa Cecília", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "Doctoralia", "avaliacoes": 31, "nota": 4.9, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L037", "nome": "Clínica SuperaMente", "categoria": "Clínica de saúde mental", "bairro": "Perdizes", "telefone": "+55 11 99177-5071", "whatsapp": "+55 11 99177-5071", "email": "", "instagram": "", "site": "https://www.clinicasuperamente.com.br/", "avaliacoes": 108, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L038", "nome": "Dra. Giuliana Cividanes", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 97182-1493", "whatsapp": "+55 11 97182-1493", "email": "clinicagenuine@gmail.com", "instagram": "@dra.giulianacividanes", "site": "https://giulianacividanes.com.br/", "avaliacoes": 42, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L039", "nome": "Dra. Isa Kabacznik", "categoria": "Psiquiatra", "bairro": "Perdizes", "telefone": "+55 11 94793-1868", "whatsapp": "+55 11 94793-1868", "email": "", "instagram": "", "site": "https://www.draisapsiquiatra.com/", "avaliacoes": 5, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Poucas avaliações (5) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L040", "nome": "Dra. Salma Ribeiz", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 97337-1819", "whatsapp": "+55 11 97337-1819", "email": "", "instagram": "@dra.salmapsiquiatra", "site": "http://psiquiatriageriatricasp.com.br/", "avaliacoes": 24, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L041", "nome": "Dra. Jade Scazufka Machado", "categoria": "Psiquiatra", "bairro": "Pinheiros", "telefone": "+55 11 99668-7751", "whatsapp": "+55 11 99668-7751", "email": "", "instagram": "", "site": "Doctoralia", "avaliacoes": 47, "nota": 4.9, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio). Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L042", "nome": "Dra. Laís Freire Silva", "categoria": "Psiquiatra", "bairro": "Itaim Bibi", "telefone": "+55 11 98999-6640", "whatsapp": "+55 11 98999-6640", "email": "", "instagram": "", "site": "https://dralaisfreirepsiquiatra.com/", "avaliacoes": 43, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L043", "nome": "Francine Ferreira", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 3231-2846", "whatsapp": "", "email": "", "instagram": "@drafrancineferreira", "site": "http://drafrancinepsiquiatra.com.br/", "avaliacoes": 37, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L044", "nome": "Dra. Nadimme Caloba", "categoria": "Psiquiatra", "bairro": "Vila Olímpia", "telefone": "+55 11 93305-8210", "whatsapp": "+55 11 93305-8210", "email": "nadimme.caloba@unifesp.br", "instagram": "", "site": "https://www.dranadimme.com.br/", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Poucas avaliações (1) — gancho de Google Meu Negócio. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L045", "nome": "Dr. Daniel Martinez", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 97329-0515", "whatsapp": "+55 11 97329-0515", "email": "danielmartinez@alumni.usp.br", "instagram": "@danielmartinez.psiquiatra", "site": "http://www.danielmartinezpsiquiatra.com/", "avaliacoes": 209, "nota": 5.0, "tier": "frio", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L046", "nome": "Dr. Isaac Efraim (Ansiedade)", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 3826-0213", "whatsapp": "", "email": "", "instagram": "@ansiedadebrasil", "site": "http://www.ansiedade.com.br/", "avaliacoes": 34, "nota": 3.7, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Nota baixa (3.7) — gestão de reputação. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L047", "nome": "Prof. Dr. Márcio Gerhardt Soeiro-de-Souza", "categoria": "Psiquiatra", "bairro": "Vila Olímpia", "telefone": "+55 11 3045-1474", "whatsapp": "", "email": "clinicamacris@gmail.com", "instagram": "", "site": "https://psiquiatramarciogerhardt.com.br/", "avaliacoes": 86, "nota": 4.9, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L048", "nome": "Dra. Nicolle Ramponi", "categoria": "Psiquiatra", "bairro": "Higienópolis", "telefone": "+55 11 94537-7103", "whatsapp": "+55 11 94537-7103", "email": "", "instagram": "", "site": "Só Lattes", "avaliacoes": 10, "nota": 5.0, "tier": "quente", "obs": "SEM SITE — só currículo Lattes. Invisível comercialmente. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L049", "nome": "Dra. Sabrina de Carvalho", "categoria": "Psiquiatra", "bairro": "Bela Vista", "telefone": "+55 11 94241-4033", "whatsapp": "+55 11 94241-4033", "email": "", "instagram": "", "site": "https://www.sabrinapsiquiatra.com.br/", "avaliacoes": 21, "nota": 4.8, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L050", "nome": "Dra. Vanessa Lima", "categoria": "Psiquiatra", "bairro": "Vila Mariana", "telefone": "+55 11 5083-8155", "whatsapp": "", "email": "", "instagram": "", "site": "Só LinkedIn", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE — usa LinkedIn como 'site'. Sem avaliações — validar atividade. Sem Instagram vinculado. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L051", "nome": "Dr. José Guilherme Giocondo", "categoria": "Psiquiatra", "bairro": "Vila Mariana", "telefone": "+55 11 93424-6264", "whatsapp": "+55 11 93424-6264", "email": "jgiocondo@usp.br", "instagram": "@giocondo.psiquiatra", "site": "https://www.giocondopsiquiatra.com/", "avaliacoes": 142, "nota": 4.8, "tier": "frio", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L052", "nome": "Dra. Nádia Faris", "categoria": "Psiquiatra", "bairro": "Vila Clementino", "telefone": "+55 11 94447-1212", "whatsapp": "+55 11 94447-1212", "email": "nadiafaris@msn.com", "instagram": "@psiquiatra.nadiafaris", "site": "https://nadiafaris.com/", "avaliacoes": 62, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L053", "nome": "Dra. Suellen Martins", "categoria": "Psiquiatra", "bairro": "Vila Clementino", "telefone": "+55 11 94115-1333", "whatsapp": "+55 11 94115-1333", "email": "", "instagram": "@drasuellen.martins", "site": "https://drasuellenmartins.com.br/", "avaliacoes": 130, "nota": 4.9, "tier": "frio", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L054", "nome": "Dr. Vinícius Veras", "categoria": "Psiquiatra", "bairro": "Vila Mariana", "telefone": "+55 11 98938-8799", "whatsapp": "+55 11 98938-8799", "email": "", "instagram": "@viniciusveras", "site": "Doctoralia", "avaliacoes": 9, "nota": 5.0, "tier": "quente", "obs": "SEM SITE PRÓPRIO — depende do Doctoralia (template genérico, sem SEO próprio).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L055", "nome": "Consultório de Psiquiatria (sem branding)", "categoria": "Psiquiatra", "bairro": "Vila Clementino", "telefone": "+55 11 99422-7400", "whatsapp": "+55 11 99422-7400", "email": "", "instagram": "", "site": "", "avaliacoes": 69, "nota": 4.3, "tier": "quente", "obs": "SEM SITE — só ficha no Google. Autoridade digital inexistente. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L056", "nome": "Dr. Renato Romero", "categoria": "Psiquiatra infantil/adulto", "bairro": "Vila Mariana", "telefone": "+55 11 96900-6483", "whatsapp": "+55 11 96900-6483", "email": "", "instagram": "", "site": "http://renatoromeropsiquiatra.com.br/", "avaliacoes": 55, "nota": 5.0, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado.", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L057", "nome": "Dra. Licia Milena de Oliveira", "categoria": "Psiquiatra", "bairro": "Vila Mariana", "telefone": "+55 11 5571-2584", "whatsapp": "", "email": "espaco578@gmail.com", "instagram": "", "site": "http://www.espaco578.com.br/", "avaliacoes": 48, "nota": 4.9, "tier": "morno", "obs": "Tem site próprio — verificar design/SEO/copy antes de abordar. Sem Instagram vinculado. Telefone fixo (provável secretária/clínica).", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L058", "nome": "Dr. Pedro Paulo Ferreira Bozzo, Psiquiatra Infantil", "categoria": "Psiquiatra", "bairro": "Alphaville Empresarial · Barueri", "telefone": "+55 11 99251-4060", "whatsapp": "+55 11 99251-4060", "email": "suporte@doctoralia.com", "instagram": "instagram.com/drpedropaulobozzo", "site": "Doctoralia (portal)", "avaliacoes": 12, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; Instagram ABANDONADO (ult. post 2023-11-11) · IG: 3102 seguidores, 270 posts, último post 2023-11-11", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L059", "nome": "Clínica Hopewell - Medicina Integrada", "categoria": "Médico", "bairro": "Alphaville · Barueri", "telefone": "+55 11 99783-1970", "whatsapp": "+55 11 99783-1970", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 13, "nota": 3.2, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L060", "nome": "Médico Psiquiatra César Setoue", "categoria": "Psiquiatra", "bairro": "Lageadinho · Cotia", "telefone": "+55 11 91278-3044", "whatsapp": "+55 11 91278-3044", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoraliamed", "site": "Doctoralia (portal)", "avaliacoes": 42, "nota": 4.8, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio · IG: 99042 seguidores, 776 posts, último post 2026-06-12", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L061", "nome": "Dra. Ximena López | Psiquiatria Para Mulheres", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 97672-2926", "whatsapp": "+55 11 97672-2926", "email": "contato@draximenalopez.com.br", "instagram": "https://www.instagram.com/dra.ximenalopez", "site": "http://draximenalopez.com.br/", "avaliacoes": 4, "nota": 5.0, "tier": "morno", "obs": "Poucas avaliacoes no Google (4); Instagram ABANDONADO (ult. post 2024-05-28) · IG: 1181 seguidores, 100 posts, último post 2024-05-28", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L062", "nome": "Dra. Laiz Ninon - Saude Mental", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 96571-1443", "whatsapp": "+55 11 96571-1443", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L063", "nome": "Consultório Dr. Marcelo M. Iwamoto", "categoria": "Serviço de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 5194-3889", "whatsapp": "", "email": "drmarceloiwamotopsiquiatria@gmail.com", "instagram": "https://www.instagram.com/drmarceloiwamoto", "site": "http://drmarcelopsiquiatria.com.br/", "avaliacoes": 23, "nota": 5.0, "tier": "morno", "obs": "Instagram com baixa audiencia (358 seg); Instagram pouco trabalhado (12 posts) · IG: 358 seguidores, 12 posts, último post 2026-06-02", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L064", "nome": "Clínica Espaço Vida (Psicologia)", "categoria": "Clínica de saúde mental", "bairro": "Alphaville · Barueri", "telefone": "+55 11 97105-7952", "whatsapp": "+55 11 97105-7952", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 8, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; poucas avaliacoes no Google (8)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L065", "nome": "Neurologia e Psiquiatria", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 3063-5719", "whatsapp": "", "email": "contato@neurologiaepsiquiatria.com.br", "instagram": "https://www.instagram.com/neurologiaepsiquiatria", "site": "http://www.neurologiaepsiquiatria.com.br/", "avaliacoes": 499, "nota": 4.9, "tier": "frio", "obs": "Presenca digital ok - validar manualmente · IG: 9777 seguidores, 233 posts, último post 2026-06-09", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L066", "nome": "Clin-S Psicologia e Saúde", "categoria": "Clínica de saúde mental", "bairro": "Residencial das Estrelas · Barueri", "telefone": "+55 11 97195-1612", "whatsapp": "+55 11 97195-1612", "email": "clinspsicologiaesaude@gmail.com", "instagram": "https://www.instagram.com/clin_s_psicologiaesaude", "site": "https://www.clin-s.com/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Ficha sem avaliacoes (autoridade nao comunicada); Instagram com baixa audiencia (16 seg); Instagram pouco trabalhado (9 posts) · IG: 16 seguidores, 9 posts, último post 2025-12-19", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L067", "nome": "CLINICA WULKAN -Unidade 2 - OSASCO - Dermatologia e Estética Avançada", "categoria": "Médico", "bairro": "Centro · Osasco", "telefone": "+55 11 2928-8170", "whatsapp": "", "email": "drwulkan@hotmail.com", "instagram": "https://www.instagram.com/clinicawulkan.dermatologia", "site": "https://clinicawulkan.com.br/a-clinica-wulkan-dermatologia-plastica-ginecologia/unidades-clinica-dermatologia-jardim-osasco-alphaville/unidade-osasco-consultorio-dermatologia-ginecologia-obstetricia/", "avaliacoes": 1454, "nota": 4.4, "tier": "frio", "obs": "Presenca digital ok - validar manualmente · IG: 42292 seguidores, 2616 posts, último post 2026-06-15", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L068", "nome": "Clínica Integra Vida", "categoria": "Terapeuta ocupacional", "bairro": "Alphaville · Barueri", "telefone": "+55 11 98184-2471", "whatsapp": "+55 11 98184-2471", "email": "desenvolvimento@clinicaintegraavida.com.br", "instagram": "https://www.instagram.com/integra.vida.cd", "site": "https://www.clinicaintegraavida.com.br/", "avaliacoes": 27, "nota": 5.0, "tier": "morno", "obs": "Presenca digital ok - validar manualmente · IG: 5357 seguidores, 203 posts, último post 2026-06-12", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L069", "nome": "Dra. Maria Fernanda Caliani - Psiquiatra Alphaville", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 97131-1515", "whatsapp": "+55 11 97131-1515", "email": "contato@neurologiaepsiquiatria.com.br", "instagram": "https://www.instagram.com/neurologiaepsiquiatria", "site": "https://neurologiaepsiquiatria.com.br/", "avaliacoes": 6, "nota": 4.3, "tier": "morno", "obs": "Poucas avaliacoes no Google (6) · IG: 9777 seguidores, 233 posts, último post 2026-06-09", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L070", "nome": "Dra. Ana Paula Leite", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 97131-1515", "whatsapp": "+55 11 97131-1515", "email": "contato@neurologiaepsiquiatria.com.br", "instagram": "https://www.instagram.com/neurologiaepsiquiatria", "site": "https://neurologiaepsiquiatria.com.br/equipe/dra-ana-paula-leite/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Ficha sem avaliacoes (autoridade nao comunicada) · IG: 9777 seguidores, 233 posts, último post 2026-06-09", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L071", "nome": "Psiquiatra Granja Viana", "categoria": "Clínica de saúde mental", "bairro": "Parque Sao George · Cotia", "telefone": "+55 11 97759-6573", "whatsapp": "+55 11 97759-6573", "email": "contato@brasilsaude.med.br", "instagram": "https://www.instagram.com/policlinicabrasilsaude", "site": "https://www.brasilsaude.med.br/", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Poucas avaliacoes no Google (1) · IG: 1685 seguidores, 123 posts, último post 2026-05-19", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L072", "nome": "Clínica Psico Alpha | Psicologo Alphaville", "categoria": "Psicólogo", "bairro": "Alphaville Comercial · Barueri", "telefone": "+55 11 99270-8588", "whatsapp": "+55 11 99270-8588", "email": "recepcao@psicoalpha.com.br", "instagram": "", "site": "http://psicoalpha.com.br/", "avaliacoes": 25, "nota": 4.9, "tier": "morno", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L073", "nome": "Espaço SER", "categoria": "Clínica de saúde mental", "bairro": "Alphaville Comercial · Barueri", "telefone": "+55 11 99105-4551", "whatsapp": "+55 11 99105-4551", "email": "espacoser51@gmail.com", "instagram": "", "site": "http://www.espacoserhuman.com.br/", "avaliacoes": 23, "nota": 4.8, "tier": "morno", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L074", "nome": "Centro Médico Salutáris", "categoria": "Policlínica", "bairro": "Centro · Osasco", "telefone": "+55 11 4624-7222", "whatsapp": "", "email": "contato@cmsalutaris.com.br", "instagram": "", "site": "https://www.cmsalutaris.com.br/", "avaliacoes": 685, "nota": 4.1, "tier": "frio", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L075", "nome": "Dr Edson Crusco Psiquiatra", "categoria": "Médico", "bairro": "Centro · Osasco", "telefone": "+55 11 96921-3636", "whatsapp": "+55 11 96921-3636", "email": "dredsoncrusco@gmail.com", "instagram": "", "site": "http://www.dredsoncrusco.com.br/", "avaliacoes": 20, "nota": 4.6, "tier": "morno", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L076", "nome": "CLÍNICA DE PSICOLOGIA E PSIQUIATRIA FERRARESE", "categoria": "Psicólogo", "bairro": "Vilarejo · Carapicuíba", "telefone": "+55 11 94727-4503", "whatsapp": "+55 11 94727-4503", "email": "info@mysite.com", "instagram": "", "site": "https://www.clinicaferrarese.com/", "avaliacoes": 15, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L077", "nome": "Psicóloga Selma Ferreira Porto de Oliveira", "categoria": "Serviço de saúde mental", "bairro": "Cidade Ariston Estela Azevedo · Carapicuíba", "telefone": "+55 11 95377-6999", "whatsapp": "+55 11 95377-6999", "email": "selmaporto0@gmail.com", "instagram": "", "site": "https://selmaporto0.wixsite.com/psicologia", "avaliacoes": 72, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L078", "nome": "Médico Psiquiatra - Dr. Cesar Setoue", "categoria": "Psiquiatra", "bairro": "Alphaville Comercial · Barueri", "telefone": "+55 11 91278-3044", "whatsapp": "+55 11 91278-3044", "email": "", "instagram": "www.instagram.com/psiquiatra.cesarsetoue", "site": "Doctoralia (portal)", "avaliacoes": 5, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; poucas avaliacoes no Google (5); Instagram ABANDONADO (ult. post 2022-09-14); Instagram com baixa audiencia (303 seg); Instagram pouco trabalhado (7 posts) · IG: 303 seguidores, 7 posts, último post 2022-09-14", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L079", "nome": "Dr. Luiz Eduardo Moraes Osorio, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 2189-0414", "whatsapp": "", "email": "", "instagram": "www.instagram.com/dr.luiz.osorio", "site": "Doctoralia (portal)", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada); Instagram parado ha ~8 meses · IG: 1917 seguidores, 95 posts, último post 2025-09-28", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L080", "nome": "Ana Lúcia L. V. R. Tribst, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 93363-9514", "whatsapp": "+55 11 93363-9514", "email": "", "instagram": "instagram.com/analucialvrt", "site": "Doctoralia (portal)", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada); Instagram ABANDONADO (ult. post 2024-06-21) · IG: 881 seguidores, 110 posts, último post 2024-06-21", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L081", "nome": "Dr. Filipe Taddeo Soares, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "", "whatsapp": "", "email": "suporte@doctoralia.com", "instagram": "instagram.com/dr_filipe_taddeo_soares", "site": "Doctoralia (portal)", "avaliacoes": 4, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; poucas avaliacoes no Google (4); Instagram ABANDONADO (ult. post 2021-06-23) · IG: 631 seguidores, 40 posts, último post 2021-06-23", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L082", "nome": "Dra. Amanda Dosatti - Pós Graduação em Psiquiatria | Barueri/SP", "categoria": "Serviço de saúde mental", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 91983-8920", "whatsapp": "+55 11 91983-8920", "email": "", "instagram": "www.instagram.com/dra.amandadosatti", "site": "Doctoralia (portal)", "avaliacoes": 5, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; poucas avaliacoes no Google (5); Instagram com baixa audiencia (180 seg); Instagram pouco trabalhado (2 posts) · IG: 180 seguidores, 2 posts, último post 2026-06-05", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L083", "nome": "Care Ville", "categoria": "Clínica especializada", "bairro": "Alphaville · Barueri", "telefone": "+55 11 98776-6662", "whatsapp": "+55 11 98776-6662", "email": "", "instagram": "https://instagram.com/carevillecentromedico", "site": "http://careville.com.br/", "avaliacoes": 25, "nota": 3.9, "tier": "morno", "obs": "Sem e-mail publico; Instagram ABANDONADO (ult. post 2023-05-30) · IG: 5536 seguidores, 355 posts, último post 2023-05-30", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L084", "nome": "Dr. Wallan Nobre Fagotti, Psiquiatra", "categoria": "Psiquiatra infantil", "bairro": "Centro · Osasco", "telefone": "+55 11 91231-3334", "whatsapp": "+55 11 91231-3334", "email": "", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 34, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L085", "nome": "Dr. Frederico Felix Vilhete D'abreu, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "", "whatsapp": "", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 3, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; poucas avaliacoes no Google (3)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L086", "nome": "Dra. Alessandra Melo l Psiquiatria", "categoria": "Médico", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 96187-9644", "whatsapp": "+55 11 96187-9644", "email": "", "instagram": "https://instagram.com/draalessandralpmelo", "site": "http://draalessandramelo.com.br/", "avaliacoes": 24, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico; Instagram pouco trabalhado (8 posts) · IG: 574 seguidores, 8 posts, último post 2026-05-15", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L087", "nome": "Dr. Renan Fernandes Cardoso, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "", "whatsapp": "", "email": "suporte@doctoralia.com", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L088", "nome": "Dr. Bruno Borges Paschoalini, Psiquiatria Funcional Integrativa", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 94701-5992", "whatsapp": "+55 11 94701-5992", "email": "", "instagram": "www.instagram.com/bruno_paschoalini.psiquiatria", "site": "Doctoralia (portal)", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada) · IG: 2812 seguidores, 77 posts, último post 2026-06-12", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L089", "nome": "Clínica Alpha Singular", "categoria": "Policlínica", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 93079-8981", "whatsapp": "+55 11 93079-8981", "email": "", "instagram": "https://www.instagram.com/alphasingular", "site": "https://alphasingular.com.br/", "avaliacoes": 22, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico; Instagram com baixa audiencia (333 seg) · IG: 333 seguidores, 83 posts, último post 2026-06-08", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L090", "nome": "Dra. Jordana Auxiliadora Fernandes Pereira Martins, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "+55 11 97435-4786", "whatsapp": "+55 11 97435-4786", "email": "", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L091", "nome": "Psiquiatria Impacta Saúde", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 91698-8829", "whatsapp": "+55 11 91698-8829", "email": "", "instagram": "https://www.instagram.com/clinica_impacta", "site": "https://www.clinicaimpacta.com.br/", "avaliacoes": 73, "nota": 4.9, "tier": "morno", "obs": "Sem e-mail publico · IG: 1352 seguidores, 21 posts, último post 2026-03-23", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L092", "nome": "Dra. Ana Julia Diniz Junqueira", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 99174-0318", "whatsapp": "+55 11 99174-0318", "email": "", "instagram": "https://instagram.com/spadavidaoficial", "site": "https://spadavida.com.br/?gad_source=1&gad_campaignid=9491074516&gbraid=0AAAAADGU2o37NFRMPC2L3XpuUL-zpUX2u&gclid=Cj0KCQjwtMHEBhC-ARIsABua5iTyfDOtCeGpNa7EnY-089rj9c_wEpurG19KfCZRrBY8xPcATHmCErkaAjFrEALw_wcB", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico; poucas avaliacoes no Google (1); Instagram com baixa audiencia (193 seg) · IG: 193 seguidores, 21 posts, último post 2026-05-21", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L093", "nome": "Spa da Vida", "categoria": "Psicólogo", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 99174-0318", "whatsapp": "+55 11 99174-0318", "email": "", "instagram": "https://instagram.com/spadavidaoficial", "site": "https://www.spadavida.com.br/", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico; poucas avaliacoes no Google (1); Instagram com baixa audiencia (193 seg) · IG: 193 seguidores, 21 posts, último post 2026-05-21", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L094", "nome": "Clinica Centrum Psicologia e Psiquiatria", "categoria": "Clínica especializada", "bairro": "Centro · Osasco", "telefone": "+55 11 3654-2334", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/centrumpsicologia", "site": "https://centrumpsicologia.com.br/", "avaliacoes": 16, "nota": 4.3, "tier": "morno", "obs": "Sem e-mail publico · IG: 2273 seguidores, 60 posts, último post 2026-02-21", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L095", "nome": "Psiconecte Saúde Integrada", "categoria": "Clínica de saúde mental", "bairro": "Vila Campesina · Osasco", "telefone": "+55 11 3685-1091", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/psiconecte", "site": "http://www.psiconecte.com.br/", "avaliacoes": 62, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico · IG: 11124 seguidores, 2364 posts, último post 2026-06-11", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L096", "nome": "Acesso Saúde Santana de Parnaiba", "categoria": "Policlínica", "bairro": "Centro Histórico · Santana de Parnaíba", "telefone": "+55 11 3588-3818", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/acessosaudesp", "site": "http://www.acessosaudesp.com.br/", "avaliacoes": 232, "nota": 4.6, "tier": "frio", "obs": "Sem e-mail publico · IG: 1678 seguidores, 337 posts, último post 2026-06-15", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L097", "nome": "BN clinic - Osasco", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "+55 11 91231-3334", "whatsapp": "+55 11 91231-3334", "email": "", "instagram": "https://www.instagram.com/upperpublicidade", "site": "http://bnclinic.com.br/", "avaliacoes": 298, "nota": 4.9, "tier": "frio", "obs": "Sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L098", "nome": "Dr Frederico Modafferi | Psiquiatra em Osasco", "categoria": "Psiquiatra", "bairro": "Vila Osasco · Osasco", "telefone": "+55 11 3654-2334", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/centrumpsicologia", "site": "https://centrumpsicologia.com.br/", "avaliacoes": 14, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico · IG: 2273 seguidores, 60 posts, último post 2026-02-21", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L099", "nome": "Clínica Elibré", "categoria": "Clínica de saúde mental", "bairro": "Granja Viana · Cotia", "telefone": "+55 11 91353-8103", "whatsapp": "+55 11 91353-8103", "email": "", "instagram": "https://www.instagram.com/elibresaude", "site": "https://elibre.com.br/", "avaliacoes": 22, "nota": 4.5, "tier": "morno", "obs": "Sem e-mail publico · IG: 11576 seguidores, 635 posts, último post 2026-06-15", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L100", "nome": "Psicóloga Adriana Santos", "categoria": "Psicólogo", "bairro": "Centro · Osasco", "telefone": "+55 11 98429-3725", "whatsapp": "+55 11 98429-3725", "email": "", "instagram": "https://www.instagram.com/psiadrianasantos", "site": "http://www.psiadrianasantos.com.br/", "avaliacoes": 34, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L101", "nome": "Dr Wagner Rodrigues Psiquiatria e Nutrologia Esportiva", "categoria": "Psiquiatra", "bairro": "CLINOVI · Osasco", "telefone": "+55 11 4506-3085", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/drwagner.mindset", "site": "https://www.drwagnermindset.com/", "avaliacoes": 2, "nota": 5.0, "tier": "morno", "obs": "Sem e-mail publico; poucas avaliacoes no Google (2) · IG: 3608 seguidores, 99 posts, último post 2026-06-15", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L102", "nome": "Adequar Saúde Alphaville", "categoria": "Centro médico", "bairro": "Alphaville Comercial · Barueri", "telefone": "+55 11 96599-3551", "whatsapp": "+55 11 96599-3551", "email": "", "instagram": "", "site": "", "avaliacoes": 185, "nota": 4.5, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L103", "nome": "BN clinic - Alphaville", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 94496-8666", "whatsapp": "+55 11 94496-8666", "email": "", "instagram": "", "site": "", "avaliacoes": 325, "nota": 4.8, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L104", "nome": "Cuidares Especialidades", "categoria": "Clínica de saúde mental", "bairro": "Alphaville · Barueri", "telefone": "+55 11 4552-1200", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 17, "nota": 4.9, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L105", "nome": "Dr Bruno Goulart psiquiatria", "categoria": "Serviço de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 2965-0121", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 14, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L106", "nome": "Dr. Celso Luiz Leite Psiquiatria", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "+55 11 3684-0947", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 21, "nota": 3.5, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L107", "nome": "Psiquiatria Carapicuíba", "categoria": "Psiquiatra", "bairro": "Jardim das Belezas · Carapicuíba", "telefone": "+55 11 4184-6419", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 28, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L108", "nome": "Centro Médico Dr. João Neves", "categoria": "Centro médico", "bairro": "Centro · Carapicuíba", "telefone": "+55 11 4184-6419", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 70, "nota": 3.8, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L109", "nome": "Cafe Emocional", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 95324-9400", "whatsapp": "+55 11 95324-9400", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L110", "nome": "CREDITA - Centro de referência especializado em diagnóstico e/ou intervenção em transtornos do comportamento", "categoria": "Serviço de saúde mental", "bairro": "Vila Sao Joao · Barueri", "telefone": "+55 11 3164-9760", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 6, "nota": 4.5, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (6)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L111", "nome": "Clínica Mente Sábia", "categoria": "Clínica de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 96571-1443", "whatsapp": "+55 11 96571-1443", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L112", "nome": "Clínica Liv Alphaville", "categoria": "Serviço de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 97079-1190", "whatsapp": "+55 11 97079-1190", "email": "", "instagram": "", "site": "", "avaliacoes": 4, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (4)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L113", "nome": "Ser Com Psicologia Clínica Alphaville", "categoria": "Serviço de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 91746-2122", "whatsapp": "+55 11 91746-2122", "email": "", "instagram": "", "site": "Só Instagram", "avaliacoes": 14, "nota": 5.0, "tier": "quente", "obs": "Nao tem site proprio (so link de rede social); sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L114", "nome": "PAIVA PSIQUIATRIA Barueri Alphaville - MEDIC LIFE", "categoria": "Psiquiatra", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 4210-1236", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L115", "nome": "Dra. Marcela Yanagimori", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "+55 11 3682-1731", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 6, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (6)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L116", "nome": "Clínica Ameni - Osasco", "categoria": "Clínica especializada", "bairro": "Jardim Agú · Osasco", "telefone": "+55 11 3684-0337", "whatsapp": "", "email": "", "instagram": "", "site": "https://wa.me/message/WP5WWWRAPCBOD1", "avaliacoes": 128, "nota": 4.7, "tier": "quente", "obs": "Nao tem site proprio (so link de rede social); sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L117", "nome": "Clínica Viver", "categoria": "Serviço de saúde mental", "bairro": "Centro · Osasco", "telefone": "+55 11 91266-2479", "whatsapp": "+55 11 91266-2479", "email": "", "instagram": "", "site": "", "avaliacoes": 4, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (4)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L118", "nome": "Dra. Doris Johanna Warthon Oyola, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Centro · Osasco", "telefone": "+55 11 98972-6559", "whatsapp": "+55 11 98972-6559", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L119", "nome": "Clínica Casa Bem-estar", "categoria": "Clínica de saúde mental", "bairro": "Jardim das Belezas · Carapicuíba", "telefone": "+55 11 99121-8308", "whatsapp": "+55 11 99121-8308", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L120", "nome": "Dra Yalanny Carvalho - Psiquiatria", "categoria": "Médico", "bairro": "Aldeia da Serra · Barueri", "telefone": "+55 11 4192-8890", "whatsapp": "", "email": "", "instagram": "", "site": "Só Instagram", "avaliacoes": 8, "nota": 5.0, "tier": "quente", "obs": "Nao tem site proprio (so link de rede social); sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (8)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L121", "nome": "Dra. Fernanda Concer | Psiquiatria", "categoria": "Psiquiatra", "bairro": "Alphaville Conde II · Barueri", "telefone": "+55 11 91724-7898", "whatsapp": "+55 11 91724-7898", "email": "", "instagram": "", "site": "Linktree", "avaliacoes": 8, "nota": 5.0, "tier": "quente", "obs": "Nao tem site proprio (so link de rede social); sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (8)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L122", "nome": "Dr. José Leandro dos Santos", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 96419-8565", "whatsapp": "+55 11 96419-8565", "email": "", "instagram": "", "site": "Linktree", "avaliacoes": 2, "nota": 1.0, "tier": "quente", "obs": "Nao tem site proprio (so link de rede social); sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (2)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L123", "nome": "Dra. Carla Mendes Constante", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 47 99141-8712", "whatsapp": "+55 47 99141-8712", "email": "", "instagram": "", "site": "http://www.dracarlamendespsiquiatra.com.br/", "avaliacoes": 11, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L124", "nome": "Dra Jessika de Paula", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 97253-9659", "whatsapp": "+55 11 97253-9659", "email": "", "instagram": "", "site": "https://drajessikadepaula.med.br/", "avaliacoes": 16, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L125", "nome": "Psiquiatra Dra. Anne Ramineli", "categoria": "Médico", "bairro": "Alphaville · Barueri", "telefone": "+55 11 4375-8668", "whatsapp": "", "email": "", "instagram": "", "site": "http://www.draanneramineli.com.br/", "avaliacoes": 38, "nota": 4.9, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L126", "nome": "Dra Luciana B. Scomparini Psiquiatra Geral & Infância e Adolescência", "categoria": "Psiquiatra", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 99117-0062", "whatsapp": "+55 11 99117-0062", "email": "", "instagram": "", "site": "http://www.dralucianascomparini.com.br/", "avaliacoes": 38, "nota": 4.9, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L127", "nome": "Dra. Carolina Fernandes Spazzapan", "categoria": "Psiquiatra", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 93079-8981", "whatsapp": "+55 11 93079-8981", "email": "", "instagram": "", "site": "https://www.dracarolinaspazzapan.com.br/", "avaliacoes": 36, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L128", "nome": "Dr. Felipe Barretos Fernandes, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 93079-8981", "whatsapp": "+55 11 93079-8981", "email": "", "instagram": "", "site": "https://drfelipebarretos.com.br/", "avaliacoes": 14, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L129", "nome": "Dra. Carolina Massarentti - Psiquiatra", "categoria": "Médico", "bairro": "Alphaville · Barueri", "telefone": "+55 11 93089-8022", "whatsapp": "+55 11 93089-8022", "email": "", "instagram": "", "site": "https://www.dracarolinamassarenttipsiquiatra.com/", "avaliacoes": 29, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L130", "nome": "PAIVA PSIQUIATRIA - Dr Luciano Costa de Paiva", "categoria": "Psiquiatra", "bairro": "Empresarial 18 do Forte · Barueri", "telefone": "+55 11 4210-1236", "whatsapp": "", "email": "", "instagram": "", "site": "https://drlucianocpaiva.com.br/", "avaliacoes": 35, "nota": 4.7, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L131", "nome": "Instituto e Clínica Cura Sui", "categoria": "Clínica de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 96600-3435", "whatsapp": "+55 11 96600-3435", "email": "", "instagram": "", "site": "http://www.clinicacurasui.com.br/", "avaliacoes": 11, "nota": 4.8, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L132", "nome": "Ativa Mente Alphaville", "categoria": "Serviço de saúde mental", "bairro": "Alphaville · Barueri", "telefone": "+55 11 99126-3146", "whatsapp": "+55 11 99126-3146", "email": "", "instagram": "", "site": "https://clinicaativamentealphaville.com/", "avaliacoes": 26, "nota": 4.8, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L133", "nome": "Psicóloga Carlas Domiciano", "categoria": "Psicólogo", "bairro": "Alphaville · Barueri", "telefone": "+55 11 95681-2885", "whatsapp": "+55 11 95681-2885", "email": "", "instagram": "", "site": "https://psicologacarlasdomiciano-murso36.gamma.site/", "avaliacoes": 86, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L134", "nome": "Núcleo Joy - Terapia ABA", "categoria": "Psicólogo", "bairro": "Vila Campesina · Osasco", "telefone": "+55 11 91451-3032", "whatsapp": "+55 11 91451-3032", "email": "", "instagram": "", "site": "https://nucleojoy.com.br/", "avaliacoes": 386, "nota": 4.9, "tier": "frio", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L135", "nome": "Instituto do Sono de Osasco", "categoria": "Laboratório médico", "bairro": "Centro · Osasco", "telefone": "+55 11 3654-0777", "whatsapp": "", "email": "", "instagram": "", "site": "http://institutodosonodeosasco.com.br/", "avaliacoes": 2476, "nota": 4.7, "tier": "frio", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L136", "nome": "Clínica Psiquiátrica Dra Luciana Vargas", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 3090-0559", "whatsapp": "", "email": "", "instagram": "", "site": "https://www.lucianavargas.com.br/", "avaliacoes": 2, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (2)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L137", "nome": "Clínica Dr. Nikolas Heine | Psiquiatra em Alphaville", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 4210-1235", "whatsapp": "", "email": "", "instagram": "", "site": "https://clinicanikolasheine.com.br/", "avaliacoes": 5, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (5)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L138", "nome": "Dr. Eduardo Tancredi", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 5039-0856", "whatsapp": "", "email": "", "instagram": "", "site": "http://edutancredipsiquiatra.com.br/", "avaliacoes": 4, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (4)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L139", "nome": "Dr. Douglas Vasconcelos - Saúde Mental e Neuromodulação REAC", "categoria": "Médico", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 94506-0226", "whatsapp": "+55 11 94506-0226", "email": "", "instagram": "", "site": "http://drdouglasvasconcelos.com.br/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L140", "nome": "Lidia Nakamura Teles", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 3061-3674", "whatsapp": "", "email": "", "instagram": "", "site": "http://www.centropsiquiatrico.com.br/", "avaliacoes": 2, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (2)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L141", "nome": "Drazelidy", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "+55 11 91637-1190", "whatsapp": "+55 11 91637-1190", "email": "", "instagram": "", "site": "https://www.drazelidy.com.br/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L142", "nome": "Psiquiatra Dr. Claudia Santana", "categoria": "Clínica de saúde mental", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 99253-4969", "whatsapp": "+55 11 99253-4969", "email": "", "instagram": "", "site": "https://www.psiquiatraclaudiasantana.com.br/", "avaliacoes": 3, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (3)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L143", "nome": "Psiquiatra Dr Danilo Borelli", "categoria": "Médico", "bairro": "Tamboré · Barueri", "telefone": "+55 11 3256-8616", "whatsapp": "", "email": "", "instagram": "", "site": "http://borellipsiquiatra.com.br/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L144", "nome": "Clínica BioNeural", "categoria": "Clínica de saúde mental", "bairro": "Barueri · Barueri", "telefone": "+55 11 98240-7757", "whatsapp": "+55 11 98240-7757", "email": "", "instagram": "", "site": "https://clinicabioneural.com/", "avaliacoes": 1, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L145", "nome": "Espaço Zilpsique Saúde Integrada", "categoria": "Psiquiatra", "bairro": "Alphaville Industrial · Barueri", "telefone": "+55 11 91192-5069", "whatsapp": "+55 11 91192-5069", "email": "", "instagram": "", "site": "https://www.zilpsique.com.br/", "avaliacoes": 0, "nota": "", "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L146", "nome": "Axis Talero Psiquiatria", "categoria": "Psiquiatra", "bairro": "City Bussocaba · Osasco", "telefone": "+55 11 99955-7305", "whatsapp": "+55 11 99955-7305", "email": "", "instagram": "", "site": "https://axispsiquiatria.wordpress.com/", "avaliacoes": 2, "nota": 5.0, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (2)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L147", "nome": "Dra. Lais Alves Pinheiro, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Granja Viana · Cotia", "telefone": "", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/institutolifebrain_", "site": "Doctoralia (portal)", "avaliacoes": 25, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico · IG: 773 seguidores, 38 posts, último post 2026-01-13", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L148", "nome": "Dra. Livia Marcelino, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville Comercial · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "https://www.instagram.com/doctoralia_br", "site": "Doctoralia (portal)", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem e-mail publico; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L149", "nome": "Dra. Gabriela Cisneros, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "Doctoralia (portal)", "avaliacoes": 16, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L150", "nome": "Elliane Silva Psicanalista", "categoria": "Serviço de saúde mental", "bairro": "Jardim Munhoz Júnior · Osasco", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 0, "nota": "", "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; ficha sem avaliacoes (autoridade nao comunicada)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L151", "nome": "ILPI", "categoria": "Serviço de saúde mental", "bairro": "Jardim Iracema · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 1, "nota": 5.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L152", "nome": "Centro de Saúde Mental - Cesame", "categoria": "Policlínica", "bairro": "Jardim Professor Benoa · Santana de Parnaíba", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "", "avaliacoes": 1, "nota": 3.0, "tier": "quente", "obs": "SEM SITE; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (1)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L153", "nome": "Dra. Ana Beatriz Teixeira Vianna, Psiquiatra", "categoria": "Psiquiatra", "bairro": "Jardim Silveira · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "Doctoralia (portal)", "avaliacoes": 8, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (8)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L154", "nome": "Dr. Silvio Figueiredo", "categoria": "Psiquiatra", "bairro": "Vila Pouso Alegre · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "Doctoralia (portal)", "avaliacoes": 2, "nota": 5.0, "tier": "quente", "obs": "Depende de portal (Doctoralia/etc) - sem site proprio; sem Instagram identificado; sem e-mail publico; poucas avaliacoes no Google (2)", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}, {"id": "L155", "nome": "Dra. Ana Flávia Oliveira | Psiquiatria", "categoria": "Psiquiatra", "bairro": "Alphaville · Barueri", "telefone": "", "whatsapp": "", "email": "", "instagram": "", "site": "https://draanaflavia.med.br/", "avaliacoes": 60, "nota": 4.9, "tier": "morno", "obs": "Sem Instagram identificado; sem e-mail publico", "stage": "prospeccao", "next": "", "nextDate": "", "notes": ""}];
+
+const STAGES = [
+  {k:"prospeccao", n:1, t:"Prospecção", g:"Tirar o lead da lista e arrancar a 1ª resposta."},
+  {k:"qualificacao", n:2, t:"Qualificação", g:"Confirmar dor, orçamento, decisão e timing — ou dar uma saída."},
+  {k:"apresentacao", n:3, t:"Abordagem & Apresentação", g:"Na call de diagnóstico, gerar o 'quero'."},
+  {k:"proposta", n:4, t:"Proposta & Negociação", g:"Enviar valores e superar objeções."},
+  {k:"fechamento", n:5, t:"Fechamento", g:"Contrato assinado + entrada paga."},
+  {k:"posvenda", n:6, t:"Pós-venda", g:"Entregar resultado, fidelizar e gerar indicação (Semente)."},
+];
+const STAGEKEYS = STAGES.map(s=>s.k);
+
+const PRINCIPLES = [
+ "<b>Especialize seu TEMPO, não pessoas.</b> Você é um time de 1 — então blinde a agenda: blocos só de Prospecção (caçar), só de Fechamento (vender), só de Entrega (produzir), só de Pós-venda. Nunca os quatro no mesmo bloco mental.",
+ "<b>Pesquise em vez de vender.</b> O 1º contato é diagnóstico, não pitch. Você está descobrindo se existe oportunidade — não empurrando site.",
+ "<b>Cold Calling 2.0:</b> texto puro, curtíssimo, lido no celular, UMA pergunta fácil, sempre honesto, com prova social. Nada de e-mail caprichado em HTML nem assunto 'Re:' mentiroso.",
+ "<b>A métrica-rainha é oportunidade qualificada / mês</b> (calls de diagnóstico marcadas). O resto é vaidade. Esforço X → resultado Y.",
+ "<b>Dê uma saída ao lead ruim.</b> Sem oportunidade nas próximas semanas? Manda pra 'Nutrir' ou descarta. Lead morto entupindo o funil rouba seu foco.",
+ "<b>O pós-venda é o motor das Sementes.</b> Psiquiatra satisfeito indica psiquiatra. A indicação é o lead mais barato e que mais converte — colha sempre."
+];
+
+const PLAYBOOK = {
+ prospeccao:{
+   principle:"Leads do tipo <b>Alvo</b>, caçados via Cold Calling 2.0. No SaaS são 50–100 toques/dia; no seu caso solo, mire <b>10–15 abordagens novas por dia</b> em texto puro. O objetivo do toque não é vender — é abrir conversa.",
+   src:"Cap. 3 (Cold Calling 2.0) e Cap. 6 (Sementes, Redes e Alvos).",
+   checklist:[
+     "Montar a lista do dia priorizando os Quentes (sem site / só Doctoralia).",
+     "Personalizar a 1ª linha citando o ponto fraco REAL do lead (ex.: 'vi que sua presença é só o Doctoralia').",
+     "Enviar em texto puro pelo melhor canal: e-mail > DM Instagram > WhatsApp (se celular) > ligar (fixo = secretária, use pra marcar).",
+     "Registrar o toque no lead e agendar follow-up em 3 dias úteis.",
+     "Nunca mandar pitch nem preço no 1º toque."
+   ],
+   advance:"O lead <b>respondeu</b> — qualquer sinal de curiosidade ou interesse. Mova para Qualificação.",
+   pitfalls:["Pitch ou preço no primeiro toque.","E-mail longo / em HTML / 'Re:' falso.","Falar de você antes da dor dele.","Desistir após 1 toque — a maioria responde do 2º ao 4º."]
+ },
+ qualificacao:{
+   principle:"A 'ligação de pesquisa': você qualifica, não convence. E usa o <b>sistema de status</b> — se não há oportunidade real, dá uma saída em vez de criar oportunidade desqualificada que tira o foco.",
+   src:"Cap. 4 (especialização/qualificação) e Cap. 6 (status de leads).",
+   checklist:[
+     "DOR: a presença digital é fraca/inexistente? (tier Quente já indica sim).",
+     "ORÇAMENTO: cobra R$500+ a consulta e tem consultório/secretária? Então R$2k + R$1k cabe.",
+     "DECISÃO: você fala com o próprio psiquiatra, não só com a secretária?",
+     "TIMING: existe um incômodo ativo (não aparece no Google, perde paciente pra colega, quer mais autoridade)?",
+     "Marcou a call de diagnóstico de 15–20 min OU confirmou 3 dos 4 critérios."
+   ],
+   advance:"<b>Call de diagnóstico marcada</b> (ou 3/4 critérios confirmados). Mova para Abordagem & Apresentação. Se não: status Nutrir ou Descartar.",
+   pitfalls:["Tratar curioso como cliente.","Forçar qualificação de quem já tem site forte + SEO (sem dor = não é seu cliente).","Aceitar 'manda por escrito' sem agendar conversa."]
+ },
+ apresentacao:{
+   principle:"Foque no <b>sucesso/negócio do cliente</b>, não no seu produto. Você vende resultado — <b>autoridade comunicada e paciente que te encontra</b> — não 'um site'. Toque no ego/vaidade com verdade.",
+   src:"Cap. 4/12 (foco no sucesso do cliente).",
+   checklist:[
+     "Pré-call: printar o Google/Doctoralia do lead e achar 1 colega do mesmo bairro com site bom (contraste).",
+     "Rapport + permissão ('posso te mostrar uma coisa rápida da sua presença online?').",
+     "Diagnóstico ao vivo: mostrar o que o paciente vê hoje.",
+     "Implicação: paciente indicado pesquisa, não acha autoridade e esfria; colega com site aparece primeiro.",
+     "Visão + oferta: site próprio + ficha otimizada + blog que te faz aparecer (R$2k + R$1k/mês).",
+     "Combinar envio da proposta com DATA."
+   ],
+   advance:"O lead <b>aceitou receber a proposta</b>. Mova para Proposta & Negociação.",
+   pitfalls:["Virar aula técnica de SEO/código.","Dar preço sem ancorar valor antes.","Encerrar sem marcar o próximo passo."]
+ },
+ proposta:{
+   principle:"Honestidade total e <b>simplicidade</b>. Assim como o e-mail, a proposta é simples e direta: diagnóstico → entrega → diferenciais → investimento → prova social → próximo passo.",
+   src:"Diretrizes de comunicação (Cap. 3) aplicadas à proposta.",
+   checklist:[
+     "Abrir com o diagnóstico do lead (print + a dor dele nas palavras dele).",
+     "Listar entrega: site + identidade visual + Google Meu Negócio + copy com SEO.",
+     "Destacar diferenciais: suporte 30 dias, vídeo-tutoriais, foco em resultado.",
+     "Investimento claro: R$2.000 setup + R$1.000/mês (manutenção + blog).",
+     "Prova social + prazo + um único próximo passo (aceite).",
+     "Enviar em até 24–48h da call, enquanto está quente."
+   ],
+   advance:"<b>Aceite verbal/escrito</b> do escopo e do valor. Mova para Fechamento.",
+   pitfalls:["Proposta longa e genérica.","Sumir após enviar — faça follow-up.","Ceder preço sem trocar por escopo."]
+ },
+ fechamento:{
+   principle:"Reduza a fricção do 'sim'. O livro ama <b>processos simples e replicáveis</b>: tenha contrato e link de pagamento prontos como template.",
+   src:"Replicabilidade e consistência (Cap. 3).",
+   checklist:[
+     "Enviar contrato + link de pagamento (template pronto).",
+     "Definir entrada (ex.: 50%) e confirmar pagamento ANTES de produzir.",
+     "Coletar materiais: logo, textos, fotos, acessos do Google Meu Negócio.",
+     "Agendar o kickoff.",
+     "Fechar o pagamento em até 48h para o aceite não esfriar."
+   ],
+   advance:"<b>Pagamento confirmado + kickoff marcado</b>. Mova para Pós-venda.",
+   pitfalls:["Deixar o aceite esfriar dias sem pagamento.","Começar a produzir antes da entrada.","Escopo verbal sem registro."]
+ },
+ posvenda:{
+   principle:"<b>Sucesso do Cliente.</b> O pós-venda é onde nasce o LTV e a Semente (indicação). O erro clássico do livro é 'investir pouco no sucesso do cliente' — não suma depois de entregar.",
+   src:"Cap. 4 (Customer Success) e Erros (Cap. 13).",
+   checklist:[
+     "Entregar no prazo e ativar o suporte de 30 dias.",
+     "Enviar os vídeo-tutoriais para o cliente se virar no básico.",
+     "Check de resultado em 30/60/90 dias: subiu no Google? veio paciente?",
+     "Pedir depoimento quando o resultado aparecer.",
+     "ATIVAR indicação: 'conhece 1–2 colegas que também só têm Doctoralia?'.",
+     "Manter a recorrência viva: o blog mensal é seu motivo recorrente de contato."
+   ],
+   advance:"Cliente satisfeito gerando <b>indicação</b> → vira Semente e reabastece o topo do funil.",
+   pitfalls:["Entregar e sumir.","Não pedir indicação (deixar a Semente na mesa).","Tratar a recorrência como cobrança, não como valor entregue."]
+ }
+};
+
+const SCRIPTS = [
+ {ph:"Etapa 1",c:"var(--quente)",t:"E-mail Cold 2.0 — lead SEM site",
+  body:`Assunto: sua presença no Google, Dr(a). {nome}
+
+Oi, Dr(a). {nome}, tudo bem?
+
+Pesquisei seu nome no Google e vi que hoje aparece só a ficha do consultório — sem um site próprio. Quando um paciente te recebe por indicação e te pesquisa, é isso que ele encontra.
+
+Trabalho com sites e Google para psiquiatras justamente pra mudar isso (autoridade + ser achado no orgânico).
+
+Faz sentido eu te mandar um diagnóstico rápido e gratuito da sua presença? É só responder "pode mandar".
+
+Abraço, {seunome}`,
+  tip:"Texto puro. Uma pergunta fácil. A 1ª frase usa o ponto fraco REAL (está na ficha do lead)."},
+ {ph:"Etapa 1",c:"var(--quente)",t:"E-mail Cold 2.0 — só Doctoralia",
+  body:`Assunto: Dr(a). {nome}, uma observação rápida
+
+Oi, Dr(a). {nome}!
+
+Notei que sua presença online hoje é basicamente o perfil do Doctoralia — a mesma vitrine genérica de centenas de outros psiquiatras, e que ainda joga o paciente pra dentro da plataforma (com seus concorrentes ao lado).
+
+Ajudo psiquiatras a terem um site próprio que comunica a autoridade DELES e aparece no Google sozinho.
+
+Posso te mandar um comparativo rápido (seu perfil x um site próprio)? Responde "quero ver".
+
+{seunome}`,
+  tip:"Ataca a dor do diretório: vitrine alugada, genérica e que entrega o paciente ao concorrente."},
+ {ph:"Etapa 1",c:"var(--accent)",t:"DM no Instagram",
+  body:`Oi, Dr(a). {nome}! Acompanhei seu perfil. Vi que ainda não tem um site próprio ligado na bio — só {canal}.
+
+Trabalho com presença digital pra psiquiatras (site + Google + autoridade). Topa eu te mandar um diagnóstico rápido do que o paciente encontra quando te pesquisa? Sem compromisso.`,
+  tip:"Curtíssimo, conversacional. Cite o que viu de verdade no perfil."},
+ {ph:"Etapa 1",c:"var(--accent)",t:"WhatsApp — 1º toque",
+  body:`Olá, Dr(a). {nome}, tudo bem? Aqui é o {seunome}.
+
+Trabalho com sites e Google para psiquiatras aqui em SP. Pesquisei seu nome e notei um ponto que pode estar te custando pacientes por indicação.
+
+Posso te explicar em 1 minuto por aqui?`,
+  tip:"Se o número for fixo (secretária), peça pra falar com o(a) doutor(a) ou o melhor horário/canal."},
+ {ph:"Etapa 1",c:"var(--morno)",t:"Follow-up #2 (3 dias depois)",
+  body:`Dr(a). {nome}, só subindo aqui meu e-mail/mensagem 🙂
+
+Pra facilitar: eu mostro em 15 min o que o paciente vê quando te pesquisa e como ficaria com site próprio. Sem custo e sem compromisso.
+
+Quer que eu te mande 2 horários esta semana?`,
+  tip:"A maioria responde entre o 2º e o 4º toque. Não desista no primeiro silêncio."},
+ {ph:"Etapa 1",c:"var(--morno)",t:"Follow-up #3 (a quebra honesta)",
+  body:`Dr(a). {nome}, sem problema se não for o momento — só me diz se faz sentido seguirmos a conversa ou se prefere que eu pare por aqui. Qualquer resposta me ajuda. Abraço!`,
+  tip:"Técnica do livro: dê uma saída honesta. Isso destrava muita resposta e limpa o funil."},
+ {ph:"Etapa 2",c:"var(--accent)",t:"Perguntas da Qualificação / Diagnóstico",
+  body:`1. Hoje, de onde vêm seus pacientes — indicação, convênio, Doctoralia?
+2. Quando alguém te indica e a pessoa pesquisa seu nome no Google, o que ela encontra?
+3. Você já perdeu (ou desconfia que perdeu) paciente por não ter onde te "checarem"?
+4. Você decide sozinho(a) sobre algo assim ou tem um sócio/secretária no meio?
+5. Numa escala de 0 a 10, o quanto te incomoda sua presença online hoje?`,
+  tip:"Pergunta 2 e 3 expõem a dor sem você vender. Pergunta 4 confirma o decisor. Pergunta 5 mede o timing."},
+ {ph:"Etapa 3",c:"var(--accent)",t:"Gancho de autoridade (ego/vaidade, com verdade)",
+  body:`"Dr(a). {nome}, com sua formação e atendendo em {bairro}, a primeira impressão que o paciente tem de você online é um perfil genérico igual ao de qualquer outro. Sua autoridade REAL não está sendo comunicada — e autoridade mal comunicada é paciente que escolhe outro. É exatamente isso que a gente resolve."`,
+  tip:"Toque no ego sem bajulação vazia: contraste o nível real dele com a vitrine pobre."},
+ {ph:"Etapa 4",c:"var(--morno)",t:"Estrutura da Proposta",
+  body:`1) DIAGNÓSTICO — print do que o paciente vê hoje + a dor nas palavras dele.
+2) O QUE ENTREGO — site + identidade visual + Google Meu Negócio otimizado + copy com SEO.
+3) DIFERENCIAIS — suporte 30 dias, vídeo-tutoriais, foco em resultado (autoridade + leads orgânicos).
+4) INVESTIMENTO — R$ 2.000 (setup) + R$ 1.000/mês (manutenção + posts de blog com SEO).
+5) PROVA SOCIAL — 1–2 cases / depoimentos.
+6) PRAZO + PRÓXIMO PASSO — data de entrega e um único clique de aceite.`,
+  tip:"Simples e direta, como o e-mail. Envie em até 48h da call."},
+ {ph:"Etapa 4",c:"var(--quente)",t:"Quebra de objeções",
+  body:`"Está caro" → O site se paga com ~4 consultas suas. E você provavelmente perde mais que isso por mês em paciente que simplesmente não te acha.
+
+"Não tenho tempo" → É justamente por isso que existe o suporte de 30 dias e os vídeo-tutoriais: você não toca em nada técnico.
+
+"Já tenho Doctoralia/Instagram" → Diretório é vitrine alugada que te iguala a todos. Site próprio é patrimônio e autoridade SUA, e aparece no Google sozinho.
+
+"Vou pensar" → Sem problema. Só pra eu te ajudar melhor: o que especificamente te faria decidir sim ou não?
+
+"Conheço alguém que faz mais barato" → Site qualquer um faz. Eu entrego resultado contínuo (SEO + blog) e fico responsável por ele todo mês.`,
+  tip:"Ancore sempre em consultas/pacientes — a régua de valor que o psiquiatra entende."},
+ {ph:"Etapa 6",c:"var(--accent)",t:"Pedido de indicação (a Semente)",
+  body:`"Dr(a). {nome}, fico muito feliz que o site já esteja trazendo resultado 🙌
+
+Posso te pedir uma coisa? Você conhece 1 ou 2 colegas psiquiatras que ainda estão só no Doctoralia ou sem site? Eu adoraria fazer por eles o mesmo que fiz por você. Se puder me apresentar, cuido de todo o resto."`,
+  tip:"Peça SEMPRE no pico de satisfação (quando o resultado aparece). Indicação é o lead que mais converte."}
+];
+
+const BOOKIDEAS = [
+ {t:"1. Especialize, especialize, especialize",d:"O maior erro de vendas é pedir que a mesma pessoa prospecte E feche. O livro separa 4 funções: prospecção (SDR/Cold Calling 2.0), qualificação de inbound, fechamento (Closer) e sucesso do cliente. <b>Como você é solo:</b> não dá pra ter 4 pessoas, mas dá pra separar 4 BLOCOS de tempo. Misturar caçar, vender, produzir e dar suporte no mesmo dia mata a previsibilidade."},
+ {t:"2. Sementes, Redes e Alvos",d:"Três tipos de lead: <b>Sementes</b> (indicação, SEO, conteúdo — lentas, convertem mais), <b>Redes</b> (marketing amplo — volume) e <b>Alvos</b> (outbound caçado — Cold Calling 2.0). Sua lista do Apify é Alvo puro. As indicações dos psiquiatras que você fechar são Sementes — e psiquiatras se conhecem."},
+ {t:"3. Cold Calling 2.0",d:"Prospectar sem a velha ligação fria: e-mail/mensagem curta, em texto puro, lida no celular, com uma pergunta fácil e prova social. 'Pesquise em vez de vender' — o primeiro contato é pra descobrir oportunidade, não pra empurrar produto. Honestidade sempre (nada de 'Re:' falso)."},
+ {t:"4. A métrica que importa: oportunidade qualificada / mês",d:"O indicador-rainha do outbound é quantas oportunidades qualificadas você gera por mês — no seu caso, calls de diagnóstico marcadas. Quando você conhece suas taxas de conversão, vendas vira matemática: esforço X → resultado Y. É o que a aba Métricas calcula."},
+ {t:"5. Dê uma saída ao lead",d:"O sistema de status do livro (Nutrir / checagem trimestral / oportunidade encerrada / perfil inadequado) existe pra uma coisa: não deixar lead morto entupir o funil. Se não há oportunidade nas próximas semanas, mande nutrir ou descarte. Foco é tudo."},
+ {t:"6. Sucesso do cliente é receita futura",d:"Depois do fechamento, o trabalho não acaba — começa. Cliente bem-sucedido gera recorrência, depoimento e indicação (a tal Semente). O erro clássico apontado no livro é investir de menos no pós-venda. Pra você, cada psiquiatra feliz pode valer 1–2 novos psiquiatras."}
+];
+
+/* ---------- state ---------- */
+const LSKEY="cockpit_psiq_v1";
+let state=load();
+let memFallback=false;
+function load(){
+  try{const r=localStorage.getItem(LSKEY); if(r) return JSON.parse(r);}catch(e){memFallback=true;}
+  return {leads:JSON.parse(JSON.stringify(LEADS_SEED)), checks:{}};
+}
+function save(){
+  try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){memFallback=true;}
+}
+let curTier="all";
+
+/* ---------- nav ---------- */
+const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"]};
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+function go(v){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
+  document.getElementById('vtitle').textContent=TITLES[v][0];
+  document.getElementById('vsub').textContent=TITLES[v][1];
+  document.getElementById('rail').classList.remove('on');
+  if(v==='funil')renderBoard(); if(v==='metricas'){renderFunnel();calc();}
+  window.scrollTo(0,0);
+}
+
+/* ---------- painel ---------- */
+function renderPainel(){
+  const L=state.leads;
+  const byStage=k=>L.filter(l=>l.stage===k).length;
+  const quentes=L.filter(l=>l.tier==='quente').length;
+  const oport=L.filter(l=>['apresentacao','proposta','fechamento','posvenda'].includes(l.stage)).length;
+  const fechados=byStage('posvenda');
+  const kpis=[
+    {l:"Leads no funil",v:L.length,d:`${quentes} quentes · ${L.length-quentes} aquecer`},
+    {l:"Em prospecção",v:byStage('prospeccao'),d:"topo do funil"},
+    {l:"Oportunidades qualificadas",v:oport,d:"a métrica-rainha do livro"},
+    {l:"Clientes fechados",v:fechados,d:`R$ ${(fechados*2000).toLocaleString('pt-BR')} em setup`}
+  ];
+  document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="card kpi"><div class="accentbar"></div><div class="l">${k.l}</div><div class="v">${k.v}</div><div class="d">${k.d}</div></div>`).join('');
+  document.getElementById('principles').innerHTML=PRINCIPLES.map(p=>`<li style="margin:9px 0">${p}</li>`).join('');
+  const withNext=L.filter(l=>l.nextDate).sort((a,b)=>a.nextDate.localeCompare(b.nextDate));
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('nextactions').innerHTML = withNext.length? withNext.map(l=>{
+    const due=l.nextDate<=today;
+    return `<div class="check" style="cursor:pointer" onclick="openLead('${l.id}')"><div style="flex:1"><b class="disp">${l.nome}</b> <span class="note">· ${l.bairro}</span><div class="note">${l.next||'(sem descrição)'} </div></div><span class="mono" style="color:${due?'var(--quente)':'var(--accent)'}">${l.nextDate}${due?' ⚠':''}</span></div>`;
+  }).join('') : `<p class="note">Nenhuma ação agendada. Abra um lead no Funil e defina a próxima ação + data — elas aparecem aqui.</p>`;
+}
+
+/* ---------- board ---------- */
+function setTier(b){document.querySelectorAll('[data-tier]').forEach(x=>x.classList.remove('on'));b.classList.add('on');curTier=b.dataset.tier;renderBoard();}
+const TIERCLASS={quente:'q',morno:'m',frio:'f'};
+function renderBoard(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const board=document.getElementById('board');
+  board.innerHTML=STAGES.map(s=>{
+    const items=state.leads.filter(l=>l.stage===s.k)
+      .filter(l=>curTier==='all'||l.tier===curTier)
+      .filter(l=>!q||l.nome.toLowerCase().includes(q)||l.bairro.toLowerCase().includes(q));
+    return `<div class="col" data-stage="${s.k}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+      <div class="col-h"><span class="n">${s.n}</span><span class="t">${s.t}</span><span class="c">${items.length}</span></div>
+      <div class="col-b">${items.map(cardHTML).join('')||'<p class="note" style="padding:6px 4px">—</p>'}</div></div>`;
+  }).join('');
+  document.querySelectorAll('.lead').forEach(el=>{
+    el.ondragstart=e=>{e.dataTransfer.setData('id',el.dataset.id);setTimeout(()=>el.style.opacity=.4,0)};
+    el.ondragend=e=>el.style.opacity=1;
+    el.onclick=()=>openLead(el.dataset.id);
+  });
+  renderSpine();
+}
+function cardHTML(l){
+  const today=new Date().toISOString().slice(0,10);
+  const due=l.nextDate&&l.nextDate<=today;
+  return `<div class="lead ${TIERCLASS[l.tier]}" draggable="true" data-id="${l.id}">
+    <div class="nm">${l.nome}</div>
+    <div class="mt"><span class="pill ${TIERCLASS[l.tier]}">${l.tier}</span><span>${l.bairro}</span></div>
+    ${l.nextDate?`<div class="nx ${due?'due':''}">→ ${l.next||'ação'} · ${l.nextDate}${due?' ⚠':''}</div>`:''}
+  </div>`;
+}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag')}
+function dragLeave(e){e.currentTarget.classList.remove('drag')}
+function drop(e){e.preventDefault();e.currentTarget.classList.remove('drag');const id=e.dataTransfer.getData('id');const st=e.currentTarget.dataset.stage;moveLead(id,st);}
+function moveLead(id,stage){const l=state.leads.find(x=>x.id===id);if(l&&l.stage!==stage){l.stage=stage;save();renderBoard();toast(`${l.nome} → ${STAGES.find(s=>s.k===stage).t}`);}}
+
+/* ---------- spine ---------- */
+function renderSpine(){
+  document.getElementById('spine').innerHTML=STAGES.map(s=>{
+    const c=state.leads.filter(l=>l.stage===s.k).length;
+    return `<div class="step" onclick="go('funil')"><span class="n">${s.n}</span>${s.t}<span class="ct">${c}</span></div>`;
+  }).join('');
+}
+
+/* ---------- drawer ---------- */
+function openLead(id){
+  const l=state.leads.find(x=>x.id===id);if(!l)return;
+  const ch=state.checks[id]||{};
+  const pb=PLAYBOOK[l.stage];
+  const tc=TIERCLASS[l.tier];
+  const wppNum=(l.whatsapp||'').replace(/\D/g,'');
+  const drawer=document.getElementById('drawer');
+  drawer.innerHTML=`
+   <div class="dh"><button class="x" onclick="closeDrawer()">✕</button>
+     <div class="eyebrow">${l.bairro} · ${l.categoria}</div>
+     <h3>${l.nome}</h3>
+     <div style="margin-top:8px"><span class="pill ${tc}" style="font-size:11px">${l.tier.toUpperCase()}</span>
+     ${l.nota!==''?`<span class="note mono" style="margin-left:8px">★ ${l.nota} · ${l.avaliacoes} avaliações</span>`:`<span class="note mono" style="margin-left:8px">${l.avaliacoes} avaliações</span>`}</div>
+   </div>
+   <div class="db">
+     <div class="obsbox ${tc}"><b>Gancho de venda:</b> ${l.obs}</div>
+     <div class="qa">
+       ${wppNum?`<a href="https://wa.me/${wppNum}" target="_blank">WhatsApp</a>`:''}
+       ${l.email?`<a href="mailto:${l.email}" target="_blank">E-mail</a>`:''}
+       ${l.instagram?`<a href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank">Instagram</a>`:''}
+       <a href="https://www.google.com/search?q=${encodeURIComponent(l.nome+' psiquiatra '+l.bairro)}" target="_blank">Google</a>
+     </div>
+     <div class="kv">
+       <span class="k">Telefone</span><span>${l.telefone||'—'}</span>
+       <span class="k">WhatsApp</span><span>${l.whatsapp||'— (fixo)'}</span>
+       <span class="k">E-mail</span><span>${l.email||'—'}</span>
+       <span class="k">Instagram</span><span>${l.instagram||'—'}</span>
+       <span class="k">Site</span><span>${l.site?(l.site.startsWith('http')?`<a href="${l.site}" target="_blank">${l.site}</a>`:l.site):'— sem site'}</span>
+     </div>
+     <div class="fld"><label>Etapa do funil</label>
+       <div class="stagerow">${STAGES.map(s=>`<button class="${l.stage===s.k?'on':''}" onclick="setStage('${id}','${s.k}')">${s.n}. ${s.t}</button>`).join('')}</div>
+     </div>
+     <div class="fld"><label>Próxima ação</label><input id="d_next" value="${(l.next||'').replace(/"/g,'&quot;')}" placeholder="Ex.: ligar / mandar follow-up #2" oninput="setField('${id}','next',this.value)"></div>
+     <div class="fld"><label>Data da próxima ação</label><input id="d_date" type="date" value="${l.nextDate||''}" onchange="setField('${id}','nextDate',this.value)"></div>
+     <div class="fld"><label>Notas</label><textarea oninput="setField('${id}','notes',this.value)" placeholder="O que rolou na última conversa…">${l.notes||''}</textarea></div>
+     <div class="fld"><label>Checklist da etapa — ${STAGES.find(s=>s.k===l.stage).t}</label>
+       <div>${pb.checklist.map((c,i)=>`<label class="check ${ch[l.stage+'_'+i]?'done':''}"><input type="checkbox" ${ch[l.stage+'_'+i]?'checked':''} onchange="toggleCheck('${id}','${l.stage}_${i}',this.checked)"><span>${c}</span></label>`).join('')}</div>
+     </div>
+     <div class="adv"><span>🎯</span><div><b>Gatilho de avanço:</b> ${pb.advance}</div></div>
+   </div>`;
+  drawer.classList.add('on');document.getElementById('scrim').classList.add('on');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on');renderBoard();renderPainel();}
+function setStage(id,st){const l=state.leads.find(x=>x.id===id);l.stage=st;save();openLead(id);toast('Etapa atualizada');}
+function setField(id,f,v){const l=state.leads.find(x=>x.id===id);l[f]=v;save();}
+function toggleCheck(id,key,val){state.checks[id]=state.checks[id]||{};state.checks[id][key]=val;save();const el=event.target.closest('.check');el.classList.toggle('done',val);}
+
+/* ---------- playbook ---------- */
+function renderPlaybook(){
+  document.getElementById('playbook').innerHTML=STAGES.map(s=>{
+    const pb=PLAYBOOK[s.k];const count=state.leads.filter(l=>l.stage===s.k).length;
+    return `<div class="card stage" id="st-${s.k}">
+      <div class="stage-h" onclick="document.getElementById('st-${s.k}').classList.toggle('open')">
+        <div class="num">${String(s.n).padStart(2,'0')}</div>
+        <div class="ti"><h3>${s.t}</h3><div class="g">${s.g}</div></div>
+        <span class="tg">${count} no funil</span><span class="car">▸</span>
+      </div>
+      <div class="stage-body">
+        <div class="block"><div class="bh">⟐ Princípio do Receita Previsível</div><div class="book">${pb.principle}<span class="src">${pb.src}</span></div></div>
+        <div class="block"><div class="bh">☑ Checklist</div><ul class="li">${pb.checklist.map(c=>`<li>${c}</li>`).join('')}</ul></div>
+        <div class="block"><div class="bh">🎯 Gatilho de avanço</div><div class="adv"><span>→</span><div>${pb.advance}</div></div></div>
+        <div class="block"><div class="bh">⚠ Armadilhas</div>${pb.pitfalls.map(p=>`<div class="pitfall"><span>✕</span><span>${p}</span></div>`).join('')}</div>
+      </div></div>`;
+  }).join('');
+  document.getElementById('st-prospeccao').classList.add('open');
+}
+
+/* ---------- scripts ---------- */
+function renderScripts(){
+  document.getElementById('scripts').innerHTML=SCRIPTS.map((s,i)=>`
+   <div class="card script" id="sc-${i}">
+     <div class="sh" onclick="toggleScript(${i})">
+       <span class="ph" style="background:${s.c}">${s.ph}</span>
+       <h4>${s.t}</h4>
+       <button class="cp" onclick="event.stopPropagation();copyScript(${i})">Copiar</button>
+     </div>
+     <div class="sb"><pre id="pre-${i}">${s.body.replace(/</g,'&lt;')}</pre><div class="tip">💡 ${s.tip}</div></div>
+   </div>`).join('');
+}
+function toggleScript(i){document.getElementById('sc-'+i).classList.toggle('open')}
+function copyScript(i){const t=SCRIPTS[i].body;navigator.clipboard.writeText(t).then(()=>toast('Script copiado'),()=>toast('Copie manualmente'));document.getElementById('sc-'+i).classList.add('open');}
+
+/* ---------- metrics ---------- */
+function renderFunnel(){
+  const total=state.leads.length||1;
+  const counts=STAGES.map(s=>state.leads.filter(l=>l.stage===s.k).length);
+  const max=Math.max(...counts,1);
+  document.getElementById('funnel').innerHTML=STAGES.map((s,i)=>{
+    const c=counts[i];const w=Math.max(8,(c/max)*100);
+    const conv=i>0&&counts[i-1]>0?Math.round((c/counts[i-1])*100):null;
+    return `<div class="fstep"><span class="lb">${s.n}. ${s.t}</span><div class="bar" style="width:${w}%">${c}</div>${conv!==null?`<span class="rt">${conv}% da anterior</span>`:''}</div>`;
+  }).join('');
+}
+function n(id){return parseFloat(document.getElementById(id).value)||0}
+function calc(){
+  const goal=n('c_goal'),resp=n('c_resp')/100,call=n('c_call')/100,prop=n('c_prop')/100,close=n('c_close')/100,days=n('c_days')||20;
+  const propostas=close>0?goal/close:0;
+  const calls=prop>0?propostas/prop:0;
+  const respostas=call>0?calls/call:0;
+  const toques=resp>0?respostas/resp:0;
+  const perDay=toques/days;
+  const row=(l,v,note)=>`<div class="crow"><span>${l}</span><span class="mono"><b>${v}</b> <span class="note">${note||''}</span></span></div>`;
+  document.getElementById('calcout').innerHTML=`
+    <div class="eyebrow" style="margin-bottom:8px">O que isso exige por mês</div>
+    ${row('Fechamentos (meta)',Math.ceil(goal))}
+    ${row('Propostas enviadas',Math.ceil(propostas))}
+    ${row('Calls de diagnóstico',Math.ceil(calls))}
+    ${row('Respostas',Math.ceil(respostas))}
+    ${row('Toques de prospecção',Math.ceil(toques))}
+    <div style="margin-top:14px;text-align:center">
+      <div class="note">Você precisa de aproximadamente</div>
+      <div class="bignum">${Math.ceil(perDay)}</div>
+      <div class="note">toques novos por dia útil (${days} dias)</div>
+    </div>`;
+  const setup=goal*2000;
+  const recmes=goal*1000;
+  const ac12=goal*2000*12 + 1000*goal*(12*13/2); // setup todo mês + recorrência acumulando
+  document.getElementById('revout').innerHTML=`
+    <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+      <div><div class="note">Receita de setup / mês</div><div class="bignum" style="font-size:26px">R$ ${setup.toLocaleString('pt-BR')}</div></div>
+      <div><div class="note">Nova recorrência / mês</div><div class="bignum" style="font-size:26px;color:var(--morno)">+R$ ${recmes.toLocaleString('pt-BR')}</div></div>
+      <div><div class="note">Acumulado em 12 meses</div><div class="bignum" style="font-size:26px;color:var(--ink)">R$ ${Math.round(ac12).toLocaleString('pt-BR')}</div></div>
+    </div>`;
+}
+
+/* ---------- book ---------- */
+function renderBook(){
+  document.getElementById('bookideas').innerHTML=BOOKIDEAS.map(b=>`<div class="card pad" style="margin-bottom:12px"><h3 style="font-size:15px;color:var(--accent)">${b.t}</h3><p style="margin:8px 0 0;font-size:13.5px">${b.d}</p></div>`).join('');
+}
+
+/* ---------- data io ---------- */
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-vendas-backup.json';a.click();toast('Backup exportado');}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();renderAll();toast('Dados importados');}catch(err){toast('Arquivo inválido');}};r.readAsText(f);}
+function resetData(){if(confirm('Voltar aos 155 leads originais? Suas anotações e o progresso do funil serão apagados.')){state={leads:JSON.parse(JSON.stringify(LEADS_SEED)),checks:{}};save();renderAll();toast('Funil resetado');}}
+
+function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1900);}
+
+renderAll();
+if(memFallback)setTimeout(()=>toast('Aviso: salvamento automático indisponível aqui. Baixe o arquivo e abra no seu navegador para salvar.'),600);
+</script>
+</body>
+</html>
