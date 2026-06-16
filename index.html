@@ -106,6 +106,16 @@ main{padding:0;min-width:0}
 .bar input{flex:1;min-width:160px}
 .chip{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
 .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.chip2.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bardiv{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
+.appr{font-size:9px;font-family:"JetBrains Mono";padding:1px 6px;border-radius:20px;border:1px solid var(--line);color:var(--muted);background:var(--panel);letter-spacing:.03em;white-space:nowrap}
+.appr.on{background:var(--accent-soft);color:var(--accent);border-color:#BEE2D6}
+.apprtoggle{display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+.apprtoggle .st{font-size:12.5px;font-weight:600;font-family:"Space Grotesk";display:flex;align-items:center;gap:8px}
+.apprtoggle .dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex-shrink:0}
+.apprtoggle.is-on .dot{background:var(--accent2)}
+.apprbtn{font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.apprbtn.off{background:var(--panel);color:var(--accent)}
 
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(16,20,26,.42);opacity:0;pointer-events:none;transition:.2s;z-index:40}
@@ -264,6 +274,10 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
           <button class="chip" data-tier="quente" onclick="setTier(this)">🔥 Quentes</button>
           <button class="chip" data-tier="morno" onclick="setTier(this)">🌤 Mornos</button>
           <button class="chip" data-tier="frio" onclick="setTier(this)">❄ Frios</button>
+          <span class="bardiv"></span>
+          <button class="chip chip2 on" data-appr="all" onclick="setAppr(this)">Todo status</button>
+          <button class="chip chip2" data-appr="nao" onclick="setAppr(this)">○ Não abordados</button>
+          <button class="chip chip2" data-appr="sim" onclick="setAppr(this)">● Abordados</button>
         </div>
         <div class="board" id="board"></div>
         <p class="note" style="margin-top:12px">Arraste os cards entre as colunas (no desktop) ou abra um lead e use o seletor de etapa. Tudo é salvo automaticamente no seu navegador.</p>
@@ -528,13 +542,18 @@ const LSKEY="cockpit_psiq_v1";
 let state=load();
 let memFallback=false;
 function load(){
-  try{const r=localStorage.getItem(LSKEY); if(r) return JSON.parse(r);}catch(e){memFallback=true;}
-  return {leads:JSON.parse(JSON.stringify(LEADS_SEED)), checks:{}};
+  let st;
+  try{const r=localStorage.getItem(LSKEY); if(r) st=JSON.parse(r);}catch(e){memFallback=true;}
+  if(!st) st={leads:JSON.parse(JSON.stringify(LEADS_SEED)), checks:{}};
+  // normaliza status "abordado": deriva da etapa quando ainda não definido
+  st.leads.forEach(l=>{ if(l.abordado===undefined) l.abordado = l.stage!=='prospeccao'; });
+  return st;
 }
 function save(){
   try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){memFallback=true;}
 }
-let curTier="all";
+function isAbordado(l){return l.abordado===true;}
+let curTier="all", curAppr="all";
 
 /* ---------- nav ---------- */
 const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"]};
@@ -554,11 +573,12 @@ function renderPainel(){
   const L=state.leads;
   const byStage=k=>L.filter(l=>l.stage===k).length;
   const quentes=L.filter(l=>l.tier==='quente').length;
+  const naoAbordados=L.filter(l=>!isAbordado(l)).length;
   const oport=L.filter(l=>['apresentacao','proposta','fechamento','posvenda'].includes(l.stage)).length;
   const fechados=byStage('posvenda');
   const kpis=[
     {l:"Leads no funil",v:L.length,d:`${quentes} quentes · ${L.length-quentes} aquecer`},
-    {l:"Em prospecção",v:byStage('prospeccao'),d:"topo do funil"},
+    {l:"Não abordados",v:naoAbordados,d:`${L.length-naoAbordados} já abordados · sem 1º contato`},
     {l:"Oportunidades qualificadas",v:oport,d:"a métrica-rainha do livro"},
     {l:"Clientes fechados",v:fechados,d:`R$ ${(fechados*2000).toLocaleString('pt-BR')} em setup`}
   ];
@@ -574,6 +594,7 @@ function renderPainel(){
 
 /* ---------- board ---------- */
 function setTier(b){document.querySelectorAll('[data-tier]').forEach(x=>x.classList.remove('on'));b.classList.add('on');curTier=b.dataset.tier;renderBoard();}
+function setAppr(b){document.querySelectorAll('[data-appr]').forEach(x=>x.classList.remove('on'));b.classList.add('on');curAppr=b.dataset.appr;renderBoard();}
 const TIERCLASS={quente:'q',morno:'m',frio:'f'};
 function renderBoard(){
   const q=(document.getElementById('search').value||'').toLowerCase();
@@ -581,6 +602,7 @@ function renderBoard(){
   board.innerHTML=STAGES.map(s=>{
     const items=state.leads.filter(l=>l.stage===s.k)
       .filter(l=>curTier==='all'||l.tier===curTier)
+      .filter(l=>curAppr==='all'||(curAppr==='sim'?isAbordado(l):!isAbordado(l)))
       .filter(l=>!q||l.nome.toLowerCase().includes(q)||l.bairro.toLowerCase().includes(q));
     return `<div class="col" data-stage="${s.k}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
       <div class="col-h"><span class="n">${s.n}</span><span class="t">${s.t}</span><span class="c">${items.length}</span></div>
@@ -598,14 +620,15 @@ function cardHTML(l){
   const due=l.nextDate&&l.nextDate<=today;
   return `<div class="lead ${TIERCLASS[l.tier]}" draggable="true" data-id="${l.id}">
     <div class="nm">${l.nome}</div>
-    <div class="mt"><span class="pill ${TIERCLASS[l.tier]}">${l.tier}</span><span>${l.bairro}</span></div>
+    <div class="mt"><span class="pill ${TIERCLASS[l.tier]}">${l.tier}</span><span class="appr ${isAbordado(l)?'on':''}">${isAbordado(l)?'✓ abordado':'○ não abordado'}</span></div>
+    <div class="mt"><span>${l.bairro}</span></div>
     ${l.nextDate?`<div class="nx ${due?'due':''}">→ ${l.next||'ação'} · ${l.nextDate}${due?' ⚠':''}</div>`:''}
   </div>`;
 }
 function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag')}
 function dragLeave(e){e.currentTarget.classList.remove('drag')}
 function drop(e){e.preventDefault();e.currentTarget.classList.remove('drag');const id=e.dataTransfer.getData('id');const st=e.currentTarget.dataset.stage;moveLead(id,st);}
-function moveLead(id,stage){const l=state.leads.find(x=>x.id===id);if(l&&l.stage!==stage){l.stage=stage;save();renderBoard();toast(`${l.nome} → ${STAGES.find(s=>s.k===stage).t}`);}}
+function moveLead(id,stage){const l=state.leads.find(x=>x.id===id);if(l&&l.stage!==stage){l.stage=stage;if(stage!=='prospeccao')l.abordado=true;save();renderBoard();toast(`${l.nome} → ${STAGES.find(s=>s.k===stage).t}`);}}
 
 /* ---------- spine ---------- */
 function renderSpine(){
@@ -645,6 +668,10 @@ function openLead(id){
        <span class="k">Instagram</span><span>${l.instagram||'—'}</span>
        <span class="k">Site</span><span>${l.site?(l.site.startsWith('http')?`<a href="${l.site}" target="_blank">${l.site}</a>`:l.site):'— sem site'}</span>
      </div>
+     <div class="apprtoggle ${isAbordado(l)?'is-on':''}">
+       <div class="st"><span class="dot"></span>${isAbordado(l)?'Lead já abordado':'Lead ainda não abordado'}</div>
+       <button class="apprbtn ${isAbordado(l)?'off':''}" onclick="toggleAbordado('${id}')">${isAbordado(l)?'Desmarcar':'Marcar como abordado'}</button>
+     </div>
      <div class="fld"><label>Etapa do funil</label>
        <div class="stagerow">${STAGES.map(s=>`<button class="${l.stage===s.k?'on':''}" onclick="setStage('${id}','${s.k}')">${s.n}. ${s.t}</button>`).join('')}</div>
      </div>
@@ -659,7 +686,8 @@ function openLead(id){
   drawer.classList.add('on');document.getElementById('scrim').classList.add('on');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on');renderBoard();renderPainel();}
-function setStage(id,st){const l=state.leads.find(x=>x.id===id);l.stage=st;save();openLead(id);toast('Etapa atualizada');}
+function setStage(id,st){const l=state.leads.find(x=>x.id===id);l.stage=st;if(st!=='prospeccao')l.abordado=true;save();openLead(id);toast('Etapa atualizada');}
+function toggleAbordado(id){const l=state.leads.find(x=>x.id===id);l.abordado=!isAbordado(l);save();openLead(id);renderPainel();toast(l.abordado?'Marcado como abordado':'Marcado como não abordado');}
 function setField(id,f,v){const l=state.leads.find(x=>x.id===id);l[f]=v;save();}
 function toggleCheck(id,key,val){state.checks[id]=state.checks[id]||{};state.checks[id][key]=val;save();const el=event.target.closest('.check');el.classList.toggle('done',val);}
 
