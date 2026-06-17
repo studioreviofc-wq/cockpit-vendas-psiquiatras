@@ -141,6 +141,8 @@ main{padding:0;min-width:0}
 .qa{display:flex;gap:8px;flex-wrap:wrap}
 .qa a{flex:1;min-width:120px;text-align:center;text-decoration:none;font-size:12px;font-weight:600;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 .qa a:hover{border-color:var(--accent);color:var(--accent)}
+.diagbtn{width:100%;border:0;background:var(--accent);color:#fff;font-family:"Space Grotesk";font-weight:600;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;transition:.12s}
+.diagbtn:hover{background:var(--accent2)}
 
 /* checklist */
 .check{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -221,6 +223,7 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
       <button data-v="etapas"><span class="ic">≣</span> Etapas / Playbook</button>
       <button data-v="scripts"><span class="ic">❝</span> Scripts</button>
       <button data-v="metricas"><span class="ic">▲</span> Métricas & Meta</button>
+      <button data-v="scorecard"><span class="ic">🩺</span> Diagnóstico</button>
       <button data-v="livro"><span class="ic">▣</span> O Livro</button>
     </nav>
     <div class="spine">
@@ -327,6 +330,11 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
           <p class="note">Resumo aplicado. As ideias estão reorganizadas para o seu contexto (prestador solo de web design + SEO local vendendo para psiquiatras).</p>
         </div>
         <div id="bookideas"></div>
+      </section>
+
+      <!-- SCORECARD / DIAGNÓSTICO -->
+      <section class="view" id="v-scorecard">
+        <iframe id="scoreFrame" title="Scorecard de Diagnóstico" style="width:100%;height:calc(100vh - 132px);min-height:560px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)"></iframe>
       </section>
 
     </div>
@@ -556,7 +564,7 @@ function isAbordado(l){return l.abordado===true;}
 let curTier="all", curAppr="all";
 
 /* ---------- nav ---------- */
-const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"]};
+const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"],scorecard:["Diagnóstico do Lead","Preencha o scorecard e gere o roteiro do vídeo — abra um lead e clique em 🩺 Diagnosticar"]};
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 function go(v){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
@@ -565,7 +573,14 @@ function go(v){
   document.getElementById('vsub').textContent=TITLES[v][1];
   document.getElementById('rail').classList.remove('on');
   if(v==='funil')renderBoard(); if(v==='metricas'){renderFunnel();calc();}
+  if(v==='scorecard'){const f=document.getElementById('scoreFrame'); if(!f.getAttribute('src')) f.src='scorecard.html?embed=1&key=geral';}
   window.scrollTo(0,0);
+}
+function diagnosticar(id){
+  const l=state.leads.find(x=>x.id===id); if(!l)return;
+  const p=new URLSearchParams({embed:'1',key:l.id,medico:l.nome,local:l.bairro,site:(l.site&&l.site.startsWith('http'))?l.site:'',ig:l.instagram||''});
+  document.getElementById('scoreFrame').src='scorecard.html?'+p.toString();
+  closeDrawer(); go('scorecard');
 }
 
 /* ---------- painel ---------- */
@@ -661,6 +676,7 @@ function openLead(id){
        ${l.instagram?`<a href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank">Instagram</a>`:''}
        <a href="https://www.google.com/search?q=${encodeURIComponent(l.nome+' psiquiatra '+l.bairro)}" target="_blank">Google</a>
      </div>
+     <button class="diagbtn" onclick="diagnosticar('${id}')">🩺 Diagnosticar este lead no Scorecard</button>
      <div class="kv">
        <span class="k">Telefone</span><span>${l.telefone||'—'}</span>
        <span class="k">WhatsApp</span><span>${l.whatsapp||'— (fixo)'}</span>

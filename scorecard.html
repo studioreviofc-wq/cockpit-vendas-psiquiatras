@@ -115,6 +115,15 @@ button{font-family:inherit;cursor:pointer}
   .idgrid{grid-template-columns:1fr 1fr}
 }
 
+/* modo embutido (dentro do cockpit, via iframe) */
+body.embed .top{background:var(--panel);color:var(--ink);border-bottom:1px solid var(--line);padding:10px 28px;position:static}
+body.embed .brand{display:none}
+body.embed .acts{margin-left:0}
+body.embed .acts button{background:var(--panel2);border-color:var(--line);color:var(--ink)}
+body.embed .acts .pri{background:var(--accent);border-color:var(--accent);color:#fff}
+body.embed .acts .pri:hover{background:var(--accent2)}
+body.embed .wrap{padding-top:18px}
+
 /* ---------- PRINT ---------- */
 @media print{
   @page{margin:14mm}
@@ -138,7 +147,7 @@ button{font-family:inherit;cursor:pointer}
 <body>
 
 <div class="top">
-  <div>
+  <div class="brand">
     <div class="k">Studio REVI · Diagnóstico</div>
     <h1>Scorecard de Diagnóstico Digital</h1>
     <div class="s">Psiquiatras — SEO · Google Meu Negócio · Autoridade · IA</div>
@@ -239,8 +248,13 @@ const PILLARS=[
 ];
 const METAS=["m_medico","m_local","m_data","m_site","m_gmb","m_ig","m_doc","m_conc","m_autor"];
 const LABEL={ok:"✓",warn:"⚠",crit:"✕"};
-const LSKEY="scorecard_psiq_v1";
+const QS=new URLSearchParams(location.search);
+if(QS.get('embed')==='1')document.body.classList.add('embed');
+const LSKEY=QS.get('key')?('scorecard_lead_'+QS.get('key')):'scorecard_psiq_v1';
 let state=load();
+// pré-preenchimento via URL (só campos ainda vazios — não sobrescreve diagnóstico salvo)
+{const PRE={m_medico:'medico',m_local:'local',m_site:'site',m_ig:'ig',m_doc:'doc',m_conc:'conc'};
+ Object.entries(PRE).forEach(([f,p])=>{const v=QS.get(p);if(v&&!state.meta[f])state.meta[f]=v;});}
 
 function load(){try{const r=localStorage.getItem(LSKEY);if(r)return JSON.parse(r);}catch(e){}return{meta:{},marks:{},notes:{}};}
 function persist(){try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}flash();}
