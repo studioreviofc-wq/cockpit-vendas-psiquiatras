@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scorecard de Diagnóstico Digital — Psiquiatras · Studio REVI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16191F; --bg:#ECEFF3; --panel:#FFFFFF; --panel2:#F6F8FA; --line:#DCE1E8; --muted:#69727E;
+  --accent:#0E7C66; --accent2:#15B98A; --accent-soft:#E1F2EC;
+  --ok:#0E7C66; --ok-bg:#E1F2EC; --warn:#B8810F; --warn-bg:#F8EFD6; --crit:#D8543A; --crit-bg:#FBE7E0;
+  --shadow:0 1px 2px rgba(20,25,33,.06),0 8px 24px rgba(20,25,33,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Spline Sans",system-ui,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3,h4{font-family:"Space Grotesk",sans-serif;margin:0;font-weight:600;letter-spacing:-.01em}
+.eyebrow{font-family:"Space Grotesk";font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+a{color:var(--accent)}
+button{font-family:inherit;cursor:pointer}
+
+/* topbar */
+.top{background:#10141A;color:#fff;padding:18px 28px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:30}
+.top .k{font-family:"Space Grotesk";font-size:9.5px;letter-spacing:.2em;color:#5E6B7B;text-transform:uppercase}
+.top h1{font-size:18px;color:#fff;line-height:1.1}
+.top .s{font-size:11.5px;color:#7C8796;margin-top:3px}
+.top .acts{margin-left:auto;display:flex;gap:8px}
+.top .acts button{background:#171C24;border:1px solid #262D38;color:#AEB7C4;border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:500;display:flex;gap:7px;align-items:center}
+.top .acts button:hover{color:#fff;border-color:#3a434f}
+.top .acts .pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.top .acts .pri:hover{background:var(--accent2);border-color:var(--accent2)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:24px 28px 70px;display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start}
+
+/* header card — lead info */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.idcard{padding:18px 20px;margin-bottom:18px}
+.idgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px}
+.fld label{font-size:10.5px;font-family:"Space Grotesk";font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:4px}
+.fld input{width:100%;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.fld input:focus{outline:none;border-color:var(--accent)}
+.fld.full{grid-column:1/-1}
+
+/* pillar sections */
+.pillar{margin-bottom:16px;overflow:hidden}
+.ph{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel2);border-radius:14px 14px 0 0}
+.ph .n{font-family:"JetBrains Mono";font-size:12px;color:#fff;background:var(--ink);width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ph h3{font-size:15px;flex:1}
+.ph .mini{font-family:"JetBrains Mono";font-size:11px;color:var(--muted)}
+.rows{padding:4px 0}
+.row{display:flex;gap:14px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent}
+.row:last-child{border-bottom:0}
+.row.ok{border-left-color:var(--ok);background:linear-gradient(90deg,var(--ok-bg),transparent 60%)}
+.row.warn{border-left-color:var(--warn);background:linear-gradient(90deg,var(--warn-bg),transparent 60%)}
+.row.crit{border-left-color:var(--crit);background:linear-gradient(90deg,var(--crit-bg),transparent 60%)}
+.row .body{flex:1;min-width:0}
+.row .q{font-size:13.5px;font-weight:500;font-family:"Space Grotesk"}
+.row .look{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.tool{font-family:"JetBrains Mono";font-size:10px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:1px 7px;border-radius:20px;white-space:nowrap}
+.row .note{margin-top:8px}
+.row .note input{width:100%;font-family:inherit;font-size:12.5px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.row .note input:focus{outline:none;border-color:var(--accent)}
+.st{display:flex;gap:4px;flex-shrink:0}
+.stbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:.1s}
+.stbtn:hover{border-color:var(--muted)}
+.stbtn.sel.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.stbtn.sel.warn{background:var(--warn);border-color:var(--warn);color:#fff}
+.stbtn.sel.crit{background:var(--crit);border-color:var(--crit);color:#fff}
+
+/* aside */
+.aside{position:sticky;top:92px;display:flex;flex-direction:column;gap:16px}
+.gauge{padding:18px 20px;text-align:center}
+.gauge .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:"Space Grotesk";font-weight:600}
+.gauge .big{font-family:"Space Grotesk";font-size:52px;font-weight:700;line-height:1;margin:6px 0 2px}
+.gauge .verdict{font-size:12.5px;font-weight:600;font-family:"Space Grotesk"}
+.gauge .track{height:8px;background:var(--panel2);border-radius:20px;margin:12px 0 4px;overflow:hidden;border:1px solid var(--line)}
+.gauge .fill{height:100%;border-radius:20px;transition:.3s;width:0}
+.tally{display:flex;gap:8px;margin-top:12px}
+.tally div{flex:1;border-radius:9px;padding:8px 4px;border:1px solid var(--line)}
+.tally .v{font-family:"Space Grotesk";font-size:20px;font-weight:700;line-height:1}
+.tally .t{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:3px}
+.tally .c-ok{background:var(--ok-bg)} .tally .c-ok .v{color:var(--ok)}
+.tally .c-warn{background:var(--warn-bg)} .tally .c-warn .v{color:var(--warn)}
+.tally .c-crit{background:var(--crit-bg)} .tally .c-crit .v{color:var(--crit)}
+
+.dores{padding:16px 18px}
+.dores h3{font-size:14px;display:flex;align-items:center;gap:8px}
+.dores .sub{font-size:11.5px;color:var(--muted);margin:3px 0 12px}
+.dore{display:flex;gap:9px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.dore:last-child{border-bottom:0}
+.dore .rank{font-family:"Space Grotesk";font-weight:700;font-size:13px;color:var(--crit);width:16px;flex-shrink:0}
+.dore.warn .rank{color:var(--warn)}
+.dore .dq{font-weight:600;font-family:"Space Grotesk"}
+.dore .dn{color:var(--muted);font-size:11.5px}
+.dore .ptag{font-family:"JetBrains Mono";font-size:9px;color:var(--muted);text-transform:uppercase}
+.empty{font-size:12.5px;color:var(--muted);padding:6px 0}
+
+.script{padding:16px 18px}
+.script h3{font-size:14px;margin-bottom:8px}
+.script pre{white-space:pre-wrap;font-family:"Spline Sans";font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;color:#2A2F38;line-height:1.6}
+
+.cfm{font-size:11px;color:var(--muted);padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel2)}
+.cfm b{color:var(--ink);font-family:"Space Grotesk"}
+
+.savetag{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12px;padding:8px 16px;border-radius:20px;opacity:0;transition:.3s;z-index:60}
+.savetag.on{opacity:.92}
+
+@media(max-width:920px){
+  .wrap{grid-template-columns:1fr}
+  .aside{position:static}
+  .idgrid{grid-template-columns:1fr 1fr}
+}
+
+/* ---------- PRINT ---------- */
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;font-size:11px}
+  .top{position:static;background:#fff;color:var(--ink);border-bottom:2px solid var(--ink);padding:0 0 10px}
+  .top .k,.top .s{color:var(--muted)} .top h1{color:var(--ink)}
+  .top .acts{display:none}
+  .wrap{display:block;max-width:none;padding:14px 0 0}
+  .aside{margin-top:18px}
+  .card{box-shadow:none;break-inside:avoid}
+  .pillar,.row,.dore,.gauge,.dores,.script{break-inside:avoid}
+  .stbtn{border:0;width:auto;height:auto}
+  .stbtn:not(.sel){display:none}
+  .stbtn.sel{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;width:auto;height:auto}
+  .row .note input{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:4px 0}
+  .savetag{display:none}
+  .fld input{border:0;border-bottom:1px solid var(--line);border-radius:0}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <div class="k">Studio REVI · Diagnóstico</div>
+    <h1>Scorecard de Diagnóstico Digital</h1>
+    <div class="s">Psiquiatras — SEO · Google Meu Negócio · Autoridade · IA</div>
+  </div>
+  <div class="acts">
+    <button onclick="window.print()" class="pri">🖨 Imprimir / PDF</button>
+    <button onclick="limpar()">＋ Novo diagnóstico</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- COLUNA PRINCIPAL -->
+  <div>
+    <div class="card idcard">
+      <div class="eyebrow" style="margin-bottom:12px">Identificação do lead</div>
+      <div class="idgrid">
+        <div class="fld"><label>Médico / Clínica</label><input id="m_medico" placeholder="Dr(a). ..." oninput="saveMeta()"></div>
+        <div class="fld"><label>Cidade / Bairro</label><input id="m_local" placeholder="Alphaville · Barueri" oninput="saveMeta()"></div>
+        <div class="fld"><label>Data</label><input id="m_data" type="date" oninput="saveMeta()"></div>
+        <div class="fld"><label>Site</label><input id="m_site" placeholder="cole a URL ou 'sem site'" oninput="saveMeta()"></div>
+        <div class="fld"><label>Ficha Google (link)</label><input id="m_gmb" placeholder="link do Maps" oninput="saveMeta()"></div>
+        <div class="fld"><label>Instagram</label><input id="m_ig" placeholder="@..." oninput="saveMeta()"></div>
+        <div class="fld"><label>Doctoralia / outro portal</label><input id="m_doc" placeholder="link" oninput="saveMeta()"></div>
+        <div class="fld"><label>Concorrente de referência</label><input id="m_conc" placeholder="quem aparece à frente dele" oninput="saveMeta()"></div>
+        <div class="fld"><label>Diagnóstico por</label><input id="m_autor" placeholder="Renan" oninput="saveMeta()"></div>
+      </div>
+    </div>
+    <div id="pillars"></div>
+  </div>
+
+  <!-- ASIDE -->
+  <div class="aside">
+    <div class="card gauge">
+      <div class="lbl">Índice de Visibilidade</div>
+      <div class="big mono" id="g_score">—</div>
+      <div class="verdict" id="g_verdict">Comece a marcar os itens</div>
+      <div class="track"><div class="fill" id="g_fill"></div></div>
+      <div class="tally">
+        <div class="c-ok"><div class="v mono" id="t_ok">0</div><div class="t">OK</div></div>
+        <div class="c-warn"><div class="v mono" id="t_warn">0</div><div class="t">Atenção</div></div>
+        <div class="c-crit"><div class="v mono" id="t_crit">0</div><div class="t">Crítico</div></div>
+      </div>
+    </div>
+
+    <div class="card dores">
+      <h3>🎯 Top dores pro vídeo</h3>
+      <div class="sub">Use as 3 primeiras no Loom. Mais que isso satura o médico.</div>
+      <div id="doreslist"><div class="empty">Marque os itens como ⚠ ou ✕ e eles aparecem aqui, priorizados.</div></div>
+    </div>
+
+    <div class="card script">
+      <h3>📝 Esqueleto do vídeo</h3>
+      <pre id="scriptbox"></pre>
+    </div>
+
+    <div class="cfm"><b>⚖️ Lembrete CFM:</b> ao apontar e ao vender, mantenha dentro da Res. CFM 2.336/2023 — nada de promessa de resultado, sensacionalismo ou exposição de paciente. Cite isso no vídeo: vira diferencial de confiança.</div>
+  </div>
+</div>
+
+<div class="savetag" id="savetag">salvo ✓</div>
+
+<script>
+const PILLARS=[
+ {n:1,t:"Google Meu Negócio (ficha)",tag:"GMB",items:[
+   {id:"g1",q:"Categoria principal é “Psiquiatra” (não “Médico/Clínica” genérico)?",look:"Categoria errada = invisível pra busca certa",tool:"GMBspy / Pleper"},
+   {id:"g2",q:"Ficha já reivindicada pelo médico?",look:"Se aparece “Reivindicar este perfil”, ele não controla a própria imagem",tool:"Google Maps"},
+   {id:"g3",q:"Volume de avaliações competitivo vs. vizinhos?",look:"Anote: ele tem X, concorrente tem Y",tool:"Maps"},
+   {id:"g4",q:"Avaliações recentes (últimos meses)?",look:"Última avaliação de 2 anos atrás = parece parado",tool:"Maps"},
+   {id:"g5",q:"Responde às avaliações (dentro do CFM)?",look:"Ausência = parece descuidado",tool:"aba Avaliações"},
+   {id:"g6",q:"Fotos boas e atuais (fachada, médico, sala)?",look:"Ficha sem foto = baixa confiança",tool:"aba Fotos"},
+   {id:"g7",q:"Usa Posts / Novidades do Google?",look:"Quase ninguém usa → ganho fácil de mostrar",tool:"perfil"},
+   {id:"g8",q:"Aparece no Top 3 do mapa p/ “psiquiatra [bairro]”?",look:"Anote a posição que ele aparece",tool:"busca anônima"},
+   {id:"g9",q:"Contato completo (tel/WhatsApp/site/horário/agendar)?",look:"Campo vazio = fricção e dado perdido",tool:"ficha"},
+ ]},
+ {n:2,t:"Site & SEO",tag:"SITE",items:[
+   {id:"s1",q:"Tem site PRÓPRIO (não só Doctoralia/Instagram)?",look:"Sem site = constrói autoridade no terreno dos outros",tool:"planilha/busca"},
+   {id:"s2",q:"HTTPS / cadeado de segurança?",look:"Sem cadeado = aviso “não seguro”. Pra psiquiatra, confiança é tudo",tool:"barra do navegador"},
+   {id:"s3",q:"Velocidade boa no celular?",look:"Anote a nota. Lento = paciente fecha antes de carregar",tool:"PageSpeed Insights"},
+   {id:"s4",q:"Nota de SEO saudável?",look:"Anote a nota (0-100)",tool:"Lighthouse (F12)"},
+   {id:"s5",q:"Title/descrição com especialidade + cidade?",look:"Se a aba diz só “Home”, não ranqueia",tool:"Detailed SEO Extension"},
+   {id:"s6",q:"Páginas indexadas no Google?",look:"site:dominio — anote a quantidade. 0-1 = problema",tool:"site: no Google"},
+   {id:"s7",q:"Ranqueia na 1ª página p/ “psiquiatra [cidade]”?",look:"Onde aparece na busca orgânica?",tool:"busca anônima"},
+   {id:"s8",q:"Conteúdo fala das dores do paciente?",look:"Ansiedade, depressão, TDAH, burnout — ou só “sobre mim”?",tool:"leitura do site"},
+   {id:"s9",q:"CTA de WhatsApp/agendamento visível?",look:"Fricção pra marcar = lead perdido",tool:"olho"},
+ ]},
+ {n:3,t:"Autoridade & Reputação",tag:"AUTOR.",items:[
+   {id:"a1",q:"Controla a 1ª página da busca pelo NOME dele?",look:"Site/IG/painel dele — ou só Doctoralia genérico?",tool:"Google '[nome]'"},
+   {id:"a2",q:"Está à frente de um concorrente direto?",look:"Anote quem aparece na frente — golpe de ego",tool:"comparar lado a lado"},
+   {id:"a3",q:"Tem Knowledge Panel (painel à direita) completo?",look:"Faltando/incompleto = Google não o reconhece como entidade",tool:"busca do nome"},
+   {id:"a4",q:"Instagram ativo (posta + tem audiência)?",look:"Perfil abandonado = autoridade não comunicada",tool:"planilha IG"},
+   {id:"a5",q:"Doctoralia completo e bem avaliado?",look:"Perfil pela metade = oportunidade perdida",tool:"Doctoralia"},
+ ]},
+ {n:4,t:"Busca por IA (GEO)",tag:"IA",items:[
+   {id:"i1",q:"Aparece no ChatGPT p/ “melhor psiquiatra [cidade]”?",look:"Não aparecer = invisível pra quem já decide via IA",tool:"ChatGPT"},
+   {id:"i2",q:"Aparece no Google AI Overview / Gemini?",look:"O topo da busca hoje é resposta de IA",tool:"Google / Gemini"},
+   {id:"i3",q:"Aparece no Perplexity?",look:"Fecho de vídeo: “o futuro da busca já não te acha”",tool:"Perplexity"},
+ ]},
+];
+const METAS=["m_medico","m_local","m_data","m_site","m_gmb","m_ig","m_doc","m_conc","m_autor"];
+const LABEL={ok:"✓",warn:"⚠",crit:"✕"};
+const LSKEY="scorecard_psiq_v1";
+let state=load();
+
+function load(){try{const r=localStorage.getItem(LSKEY);if(r)return JSON.parse(r);}catch(e){}return{meta:{},marks:{},notes:{}};}
+function persist(){try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}flash();}
+let ft;function flash(){const t=document.getElementById('savetag');t.classList.add('on');clearTimeout(ft);ft=setTimeout(()=>t.classList.remove('on'),900);}
+
+// índice de itens -> pilar (pra tags)
+const ITEM2TAG={};PILLARS.forEach(p=>p.items.forEach(it=>ITEM2TAG[it.id]=p.tag));
+const ITEM2Q={};PILLARS.forEach(p=>p.items.forEach(it=>ITEM2Q[it.id]=it.q));
+
+function renderPillars(){
+  document.getElementById('pillars').innerHTML=PILLARS.map(p=>`
+   <div class="card pillar">
+     <div class="ph"><span class="n">${p.n}</span><h3>${p.t}</h3><span class="mini" id="mini_${p.n}"></span></div>
+     <div class="rows">
+       ${p.items.map(it=>{const m=state.marks[it.id]||'';return `
+        <div class="row ${m}" id="row_${it.id}">
+          <div class="st">
+            ${['ok','warn','crit'].map(v=>`<button class="stbtn ${v} ${m===v?'sel':''}" title="${v==='ok'?'OK':v==='warn'?'Atenção':'Crítico'}" onclick="mark('${it.id}','${v}')">${LABEL[v]}</button>`).join('')}
+          </div>
+          <div class="body">
+            <div class="q">${it.q}</div>
+            <div class="look"><span class="tool">${it.tool}</span>${it.look}</div>
+            <div class="note"><input placeholder="Anotação / valor encontrado (ex.: PageSpeed 38, 6 avaliações, 3ª posição…)" value="${(state.notes[it.id]||'').replace(/"/g,'&quot;')}" oninput="note('${it.id}',this.value)"></div>
+          </div>
+        </div>`;}).join('')}
+     </div>
+   </div>`).join('');
+}
+function mark(id,v){
+  state.marks[id]=(state.marks[id]===v)?'':v;
+  const row=document.getElementById('row_'+id);row.className='row '+(state.marks[id]||'');
+  document.querySelectorAll('#row_'+id+' .stbtn').forEach(b=>b.classList.toggle('sel',b.classList.contains(state.marks[id])));
+  persist();recompute();
+}
+function note(id,v){state.notes[id]=v;persist();recompute();}
+function saveMeta(){METAS.forEach(k=>state.meta[k]=document.getElementById(k).value);persist();recompute();}
+
+function recompute(){
+  const vals=Object.values(state.marks).filter(Boolean);
+  const ok=vals.filter(v=>v==='ok').length, warn=vals.filter(v=>v==='warn').length, crit=vals.filter(v=>v==='crit').length;
+  const aval=ok+warn+crit;
+  document.getElementById('t_ok').textContent=ok;
+  document.getElementById('t_warn').textContent=warn;
+  document.getElementById('t_crit').textContent=crit;
+  // mini por pilar
+  PILLARS.forEach(p=>{const done=p.items.filter(it=>state.marks[it.id]).length;document.getElementById('mini_'+p.n).textContent=done+'/'+p.items.length;});
+  // índice
+  const g=document.getElementById('g_score'),fill=document.getElementById('g_fill'),verd=document.getElementById('g_verdict');
+  if(!aval){g.textContent='—';g.style.color='var(--ink)';fill.style.width='0';verd.textContent='Comece a marcar os itens';verd.style.color='var(--muted)';}
+  else{
+    const score=Math.round(ok/aval*100);
+    g.textContent=score+'%';fill.style.width=score+'%';
+    let c,txt;
+    if(score<40){c='var(--crit)';txt='Presença crítica — muita dor pra mostrar';}
+    else if(score<70){c='var(--warn)';txt='Presença frágil — bons ganchos';}
+    else{c='var(--ok)';txt='Já bem posicionado — atacar pontos finos';}
+    g.style.color=c;fill.style.background=c;verd.textContent=txt;verd.style.color=c;
+  }
+  // top dores: críticos primeiro, depois atenção
+  const order=[];
+  PILLARS.forEach(p=>p.items.forEach(it=>{if(state.marks[it.id]==='crit')order.push({...it,sev:'crit'});}));
+  PILLARS.forEach(p=>p.items.forEach(it=>{if(state.marks[it.id]==='warn')order.push({...it,sev:'warn'});}));
+  const box=document.getElementById('doreslist');
+  if(!order.length){box.innerHTML='<div class="empty">Marque os itens como ⚠ ou ✕ e eles aparecem aqui, priorizados.</div>';}
+  else{box.innerHTML=order.slice(0,5).map((it,i)=>`
+    <div class="dore ${it.sev}">
+      <div class="rank">${i+1}</div>
+      <div><div class="dq">${it.q}</div>
+        ${state.notes[it.id]?`<div class="dn">${state.notes[it.id]}</div>`:''}
+        <div class="ptag">${ITEM2TAG[it.id]}</div>
+      </div>
+    </div>`).join('');}
+  renderScript(order);
+}
+function renderScript(order){
+  const med=state.meta.m_medico||'Dr(a). [nome]';
+  const local=state.meta.m_local||'[cidade]';
+  const conc=state.meta.m_conc;
+  const d1=order[0]?order[0].q.replace('?',''):'[1ª dor]';
+  const d2=order[1]?order[1].q.replace('?',''):'[2ª dor]';
+  const d3=order[2]?order[2].q.replace('?',''):'[3ª dor]';
+  const concLine=conc?`Inclusive, ${conc} aqui do lado está aparecendo na sua frente — e você é tão bom quanto.`:'';
+  document.getElementById('scriptbox').textContent=
+`0:00 Oi, ${med}! Aqui é o Renan. Tava
+pesquisando psiquiatras em ${local} e achei
+3 pontos técnicos te fazendo perder paciente.
+
+0:20 [tela] Olha só: ${d1}. ${concLine}
+
+1:30 Tem mais isso: ${d2}.
+
+2:45 E esse aqui: ${d3}.
+
+3:30 Na prática: quem busca às 23h em crise
+acaba achando outro psiquiatra. Você tem a
+competência — ela só está escondida do Google.
+
+4:30 Se quiser, te mando um plano de como
+arrumar isso, sem compromisso. Só responder.`;
+}
+function limpar(){
+  if(confirm('Limpar tudo e começar um novo diagnóstico? O atual será apagado.')){
+    state={meta:{},marks:{},notes:{}};persist();
+    METAS.forEach(k=>document.getElementById(k).value='');
+    renderPillars();recompute();
+  }
+}
+// init
+renderPillars();
+METAS.forEach(k=>{if(state.meta[k]!==undefined)document.getElementById(k).value=state.meta[k];});
+if(!state.meta.m_data){const t=new Date().toISOString().slice(0,10);document.getElementById('m_data').value=t;state.meta.m_data=t;}
+if(!state.meta.m_autor){document.getElementById('m_autor').value='Renan';state.meta.m_autor='Renan';}
+recompute();
+</script>
+</body>
+</html>
