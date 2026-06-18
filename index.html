@@ -47,6 +47,7 @@ button{font-family:inherit;cursor:pointer}
 .rail-data{margin-top:auto;padding:12px;border-top:1px solid var(--rail-line);display:flex;flex-direction:column;gap:6px}
 .rail-data button{background:var(--rail2);border:1px solid var(--rail-line);color:var(--rail-txt);border-radius:7px;padding:7px 10px;font-size:11.5px;display:flex;gap:8px;align-items:center}
 .rail-data button:hover{color:#fff;border-color:#3a434f}
+.syncbadge{font-family:"JetBrains Mono";font-size:10.5px;color:#AEB7C4;padding:2px 4px 6px;display:flex;align-items:center;gap:6px}
 
 main{padding:0;min-width:0}
 .topbar{position:sticky;top:0;z-index:20;background:rgba(236,239,243,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:16px 30px;display:flex;align-items:baseline;gap:14px}
@@ -231,6 +232,7 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
       <div id="spine"></div>
     </div>
     <div class="rail-data">
+      <div class="syncbadge" id="syncbadge">☁ conectando…</div>
       <button onclick="exportData()">⬇ Exportar dados (.json)</button>
       <button onclick="document.getElementById('imp').click()">⬆ Importar dados</button>
       <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
@@ -559,6 +561,7 @@ function load(){
 }
 function save(){
   try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){memFallback=true;}
+  schedulePush();
 }
 function isAbordado(l){return l.abordado===true;}
 let curTier="all", curAppr="all";
@@ -795,10 +798,26 @@ function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();renderAll();toast('Dados importados');}catch(err){toast('Arquivo inválido');}};r.readAsText(f);}
 function resetData(){if(confirm('Voltar aos 155 leads originais? Suas anotações e o progresso do funil serão apagados.')){state={leads:JSON.parse(JSON.stringify(LEADS_SEED)),checks:{}};save();renderAll();toast('Funil resetado');}}
 
+/* ---------- sincronização em nuvem (Supabase) ---------- */
+const SB_URL="https://wsuhvkgstsxpjvawqfqa.supabase.co/rest/v1";
+const SB_KEY="sb_publishable_W07okea1xkCN6MQdFECMAA_tO3CbuEr";
+const SB_HEAD={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"};
+const SB_ROW="cockpit";
+let cloudStamp=null,pushPending=false,pushTimer=null,pulling=false;
+function setSync(s){const el=document.getElementById('syncbadge');if(!el)return;const m={ok:['☁ Sincronizado','#15B98A'],sync:['☁ Sincronizando…','#AEB7C4'],err:['⚠ Offline (salvo local)','#D8543A']};const v=m[s]||m.sync;el.textContent=v[0];el.style.color=v[1];}
+function hasMeaningfulData(s){return (s.leads||[]).some(l=>l.stage!=='prospeccao'||l.abordado||l.notes||l.next||l.nextDate)||Object.keys(s.checks||{}).length>0;}
+async function cloudGet(){const r=await fetch(`${SB_URL}/cockpit_state?id=eq.${SB_ROW}&select=data,updated_at`,{headers:SB_HEAD,cache:'no-store'});if(!r.ok)throw new Error('GET '+r.status);const rows=await r.json();return rows[0]||null;}
+async function cloudPush(){try{setSync('sync');const body=[{id:SB_ROW,data:state,updated_at:new Date().toISOString()}];const r=await fetch(`${SB_URL}/cockpit_state`,{method:'POST',headers:{...SB_HEAD,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(body)});if(!r.ok)throw new Error('POST '+r.status);const rows=await r.json();if(rows[0])cloudStamp=rows[0].updated_at;setSync('ok');}catch(e){setSync('err');}}
+function schedulePush(){pushPending=true;clearTimeout(pushTimer);pushTimer=setTimeout(async()=>{pushPending=false;await cloudPush();},800);}
+function applyRemote(data,stamp){cloudStamp=stamp;state=data;state.leads.forEach(l=>{if(l.abordado===undefined)l.abordado=l.stage!=='prospeccao';});try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}renderAll();}
+async function pollCloud(){if(pushPending||pulling)return;pulling=true;try{const row=await cloudGet();if(row&&row.updated_at&&row.updated_at!==cloudStamp){if(JSON.stringify(row.data)!==JSON.stringify(state))applyRemote(row.data,row.updated_at);else cloudStamp=row.updated_at;}setSync('ok');}catch(e){setSync('err');}pulling=false;}
+async function initSync(){setSync('sync');try{const row=await cloudGet();if(row&&row.data){applyRemote(row.data,row.updated_at);}else if(hasMeaningfulData(state)){await cloudPush();}else{setSync('ok');}}catch(e){setSync('err');}setInterval(pollCloud,7000);}
+
 function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1900);}
 
 renderAll();
+initSync();
 if(memFallback)setTimeout(()=>toast('Aviso: salvamento automático indisponível aqui. Baixe o arquivo e abra no seu navegador para salvar.'),600);
 </script>
 </body>

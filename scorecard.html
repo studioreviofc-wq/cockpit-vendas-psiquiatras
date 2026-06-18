@@ -257,7 +257,29 @@ let state=load();
  Object.entries(PRE).forEach(([f,p])=>{const v=QS.get(p);if(v&&!state.meta[f])state.meta[f]=v;});}
 
 function load(){try{const r=localStorage.getItem(LSKEY);if(r)return JSON.parse(r);}catch(e){}return{meta:{},marks:{},notes:{}};}
-function persist(){try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}flash();}
+function persist(){try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}flash();scSchedule();}
+/* ---------- sincronização em nuvem (Supabase) ---------- */
+const SB_URL="https://wsuhvkgstsxpjvawqfqa.supabase.co/rest/v1";
+const SB_KEY="sb_publishable_W07okea1xkCN6MQdFECMAA_tO3CbuEr";
+const SB_HEAD={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"};
+const SC_ROW="scorecards";
+let cloudAll=null,scTimer=null;
+async function scGet(){const r=await fetch(`${SB_URL}/cockpit_state?id=eq.${SC_ROW}&select=data`,{headers:SB_HEAD,cache:'no-store'});if(!r.ok)throw new Error('GET '+r.status);const rows=await r.json();return rows[0]?(rows[0].data||{}):{};}
+async function scPush(){try{if(cloudAll===null)cloudAll=await scGet();cloudAll[LSKEY]=state;const body=[{id:SC_ROW,data:cloudAll,updated_at:new Date().toISOString()}];await fetch(`${SB_URL}/cockpit_state`,{method:'POST',headers:{...SB_HEAD,Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)});}catch(e){}}
+function scSchedule(){clearTimeout(scTimer);scTimer=setTimeout(scPush,900);}
+async function initScSync(){
+  try{
+    cloudAll=await scGet();
+    if(cloudAll&&cloudAll[LSKEY]){
+      state=cloudAll[LSKEY];
+      const PRE={m_medico:'medico',m_local:'local',m_site:'site',m_ig:'ig',m_doc:'doc',m_conc:'conc'};
+      Object.entries(PRE).forEach(([f,p])=>{const v=QS.get(p);if(v&&!state.meta[f])state.meta[f]=v;});
+      renderPillars();
+      METAS.forEach(k=>{if(state.meta[k]!==undefined)document.getElementById(k).value=state.meta[k];});
+      recompute();
+    }
+  }catch(e){}
+}
 let ft;function flash(){const t=document.getElementById('savetag');t.classList.add('on');clearTimeout(ft);ft=setTimeout(()=>t.classList.remove('on'),900);}
 
 // índice de itens -> pilar (pra tags)
@@ -368,6 +390,7 @@ METAS.forEach(k=>{if(state.meta[k]!==undefined)document.getElementById(k).value=
 if(!state.meta.m_data){const t=new Date().toISOString().slice(0,10);document.getElementById('m_data').value=t;state.meta.m_data=t;}
 if(!state.meta.m_autor){document.getElementById('m_autor').value='Renan';state.meta.m_autor='Renan';}
 recompute();
+initScSync();
 </script>
 </body>
 </html>
