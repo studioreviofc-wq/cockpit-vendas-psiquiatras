@@ -144,6 +144,21 @@ main{padding:0;min-width:0}
 .qa a:hover{border-color:var(--accent);color:var(--accent)}
 .diagbtn{width:100%;border:0;background:var(--accent);color:#fff;font-family:"Space Grotesk";font-weight:600;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;transition:.12s}
 .diagbtn:hover{background:var(--accent2)}
+.donobadge{font-size:9.5px;font-family:"JetBrains Mono";padding:1px 6px;border-radius:20px;background:#ECE9FB;color:#5B43B5;border:1px solid #D9D2F4}
+.icp{padding:18px 20px;border-top:3px solid}
+.icp .h{display:flex;align-items:center;gap:10px}
+.icp .num{font-family:"Space Grotesk";font-weight:700;font-size:22px;width:30px}
+.icp h3{font-size:15.5px;flex:1}
+.icp .stars{font-size:13px;letter-spacing:1px}
+.icp .facil{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic}
+.icpcol{font-family:"Space Grotesk";font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:13px 0 5px}
+.icpoffer{background:var(--accent-soft);border:1px solid #BEE2D6;border-radius:9px;padding:9px 12px;font-size:12.5px;color:#0B5746;margin-top:6px}
+.prob{padding:12px 15px;border-left:3px solid var(--accent)}
+.probcat{font-family:"JetBrains Mono";font-size:9px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
+.prob .pq{font-family:"Space Grotesk";font-weight:600;font-size:13.5px;margin:6px 0 4px}
+.probline{font-size:12px;display:flex;gap:8px;margin-top:3px;color:#3A4250}
+.probline b{color:var(--muted);font-weight:600;min-width:60px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding-top:1px}
+.probline.acao{color:var(--accent)}
 
 /* checklist */
 .check{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -225,6 +240,8 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
       <button data-v="scripts"><span class="ic">❝</span> Scripts</button>
       <button data-v="metricas"><span class="ic">▲</span> Métricas & Meta</button>
       <button data-v="scorecard"><span class="ic">🩺</span> Diagnóstico</button>
+      <button data-v="icp"><span class="ic">◎</span> ICP</button>
+      <button data-v="problemas"><span class="ic">⚠</span> Problemas</button>
       <button data-v="livro"><span class="ic">▣</span> O Livro</button>
     </nav>
     <div class="spine">
@@ -283,6 +300,8 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
           <button class="chip chip2 on" data-appr="all" onclick="setAppr(this)">Todo status</button>
           <button class="chip chip2" data-appr="nao" onclick="setAppr(this)">○ Não abordados</button>
           <button class="chip chip2" data-appr="sim" onclick="setAppr(this)">● Abordados</button>
+          <span class="bardiv"></span>
+          <select id="fprosp" onchange="curProsp=this.value;renderBoard()"></select>
         </div>
         <div class="board" id="board"></div>
         <p class="note" style="margin-top:12px">Arraste os cards entre as colunas (no desktop) ou abra um lead e use o seletor de etapa. Tudo é salvo automaticamente no seu navegador.</p>
@@ -307,7 +326,10 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
         <div class="sect"><span class="n">∑</span><h3>Calculadora de Receita Previsível — "esforço X → resultado Y"</h3><span class="ln"></span></div>
         <div class="grid calc">
           <div class="card pad">
-            <div class="eyebrow" style="margin-bottom:10px">Sua meta e suas taxas (ajuste)</div>
+            <div class="eyebrow" style="margin-bottom:10px">Seu preço (editável)</div>
+            <div class="crow"><span>Preço do projeto / setup R$</span><input id="c_setup" type="number" value="1500" oninput="setCfg()"></div>
+            <div class="crow"><span>Recorrência / mês R$</span><input id="c_rec" type="number" value="1000" oninput="setCfg()"></div>
+            <div class="eyebrow" style="margin:14px 0 10px">Sua meta e suas taxas (ajuste)</div>
             <div class="crow"><span>Meta de novos clientes / mês</span><input id="c_goal" type="number" value="4" oninput="calc()"></div>
             <div class="crow"><span>Taxa de resposta por toque</span><input id="c_resp" type="number" value="10" oninput="calc()"><span class="note">%</span></div>
             <div class="crow"><span>Resposta → call de diagnóstico</span><input id="c_call" type="number" value="40" oninput="calc()"><span class="note">%</span></div>
@@ -320,7 +342,7 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
         <div class="card pad" style="margin-top:16px">
           <div class="eyebrow" style="margin-bottom:8px">Receita projetada</div>
           <div id="revout"></div>
-          <p class="note" style="margin-top:10px">Premissas editáveis acima. Modelo: R$ 2.000 de setup por cliente + R$ 1.000/mês de recorrência. A recorrência acumula — é o que torna a receita <b>previsível</b>.</p>
+          <p class="note" style="margin-top:10px">Premissas e preço editáveis acima (padrão R$ 1.500 de setup + R$ 1.000/mês de recorrência). A recorrência acumula — é o que torna a receita <b>previsível</b>.</p>
         </div>
       </section>
 
@@ -337,6 +359,19 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
       <!-- SCORECARD / DIAGNÓSTICO -->
       <section class="view" id="v-scorecard">
         <iframe id="scoreFrame" title="Scorecard de Diagnóstico" style="width:100%;height:calc(100vh - 132px);min-height:560px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)"></iframe>
+      </section>
+
+      <!-- ICP -->
+      <section class="view" id="v-icp">
+        <p class="note" style="margin-bottom:16px">Seus 3 perfis de cliente ideal. Cada um tem uma <b>dor visível diferente</b> — e por isso uma abordagem e uma oferta diferentes. As estrelas indicam a facilidade de fechar.</p>
+        <div id="icpwrap"></div>
+      </section>
+
+      <!-- PROBLEMAS -->
+      <section class="view" id="v-problemas">
+        <p class="note" style="margin-bottom:12px">Biblioteca de dores → use no diagnóstico e no roteiro do vídeo. Cada linha liga o <b>Problema</b> à <b>Causa</b>, ao <b>Impacto</b> (o que dói pro médico) e à <b>Ação</b> (o que você vende).</p>
+        <div class="bar" id="probbar"></div>
+        <div id="probwrap"></div>
       </section>
 
     </div>
@@ -551,13 +586,20 @@ const BOOKIDEAS = [
 const LSKEY="cockpit_psiq_v1";
 let state=load();
 let memFallback=false;
+function ensureState(s){
+  s.leads=s.leads||JSON.parse(JSON.stringify(LEADS_SEED));
+  s.checks=s.checks||{};
+  s.config=Object.assign({setup:1500,rec:1000},s.config||{});
+  s.prospectores=(s.prospectores&&s.prospectores.length)?s.prospectores:['Renan','Vinicius'];
+  s.metrics=s.metrics||{};
+  s.leads.forEach(l=>{ if(l.abordado===undefined) l.abordado=l.stage!=='prospeccao'; if(l.dono===undefined) l.dono=''; });
+  return s;
+}
 function load(){
   let st;
   try{const r=localStorage.getItem(LSKEY); if(r) st=JSON.parse(r);}catch(e){memFallback=true;}
   if(!st) st={leads:JSON.parse(JSON.stringify(LEADS_SEED)), checks:{}};
-  // normaliza status "abordado": deriva da etapa quando ainda não definido
-  st.leads.forEach(l=>{ if(l.abordado===undefined) l.abordado = l.stage!=='prospeccao'; });
-  return st;
+  return ensureState(st);
 }
 function save(){
   try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){memFallback=true;}
@@ -567,7 +609,7 @@ function isAbordado(l){return l.abordado===true;}
 let curTier="all", curAppr="all";
 
 /* ---------- nav ---------- */
-const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"],scorecard:["Diagnóstico do Lead","Preencha o scorecard e gere o roteiro do vídeo — abra um lead e clique em 🩺 Diagnosticar"]};
+const TITLES={painel:["Painel","Visão geral da sua máquina de receita"],funil:["Funil (Pipeline)","Arraste os 155 leads pelas 6 etapas"],etapas:["Etapas / Playbook","O processo, etapa por etapa"],scripts:["Scripts","Mensagens prontas, no estilo Cold Calling 2.0"],metricas:["Métricas & Meta","Transforme esforço em resultado previsível"],livro:["O Livro","Receita Previsível, aplicado ao seu caso"],scorecard:["Diagnóstico do Lead","Preencha o scorecard e gere o roteiro do vídeo — abra um lead e clique em 🩺 Diagnosticar"],icp:["Seu ICP","Os 3 perfis de cliente ideal e onde focar o esforço"],problemas:["Biblioteca de Problemas","Problema · Causa · Impacto · Ação — munição de diagnóstico"]};
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 function go(v){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
@@ -598,7 +640,7 @@ function renderPainel(){
     {l:"Leads no funil",v:L.length,d:`${quentes} quentes · ${L.length-quentes} aquecer`},
     {l:"Não abordados",v:naoAbordados,d:`${L.length-naoAbordados} já abordados · sem 1º contato`},
     {l:"Oportunidades qualificadas",v:oport,d:"a métrica-rainha do livro"},
-    {l:"Clientes fechados",v:fechados,d:`R$ ${(fechados*2000).toLocaleString('pt-BR')} em setup`}
+    {l:"Clientes fechados",v:fechados,d:`R$ ${(fechados*state.config.setup).toLocaleString('pt-BR')} em setup`}
   ];
   document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="card kpi"><div class="accentbar"></div><div class="l">${k.l}</div><div class="v">${k.v}</div><div class="d">${k.d}</div></div>`).join('');
   document.getElementById('principles').innerHTML=PRINCIPLES.map(p=>`<li style="margin:9px 0">${p}</li>`).join('');
@@ -617,10 +659,13 @@ const TIERCLASS={quente:'q',morno:'m',frio:'f'};
 function renderBoard(){
   const q=(document.getElementById('search').value||'').toLowerCase();
   const board=document.getElementById('board');
+  const fp=document.getElementById('fprosp');
+  if(fp){fp.innerHTML='<option value="all">👥 Todos prospectores</option>'+state.prospectores.map(p=>`<option value="${p}">${p}</option>`).join('')+'<option value="__none">— sem responsável</option>';fp.value=curProsp;}
   board.innerHTML=STAGES.map(s=>{
     const items=state.leads.filter(l=>l.stage===s.k)
       .filter(l=>curTier==='all'||l.tier===curTier)
       .filter(l=>curAppr==='all'||(curAppr==='sim'?isAbordado(l):!isAbordado(l)))
+      .filter(l=>curProsp==='all'||(curProsp==='__none'?!l.dono:l.dono===curProsp))
       .filter(l=>!q||l.nome.toLowerCase().includes(q)||l.bairro.toLowerCase().includes(q));
     return `<div class="col" data-stage="${s.k}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
       <div class="col-h"><span class="n">${s.n}</span><span class="t">${s.t}</span><span class="c">${items.length}</span></div>
@@ -639,7 +684,7 @@ function cardHTML(l){
   return `<div class="lead ${TIERCLASS[l.tier]}" draggable="true" data-id="${l.id}">
     <div class="nm">${l.nome}</div>
     <div class="mt"><span class="pill ${TIERCLASS[l.tier]}">${l.tier}</span><span class="appr ${isAbordado(l)?'on':''}">${isAbordado(l)?'✓ abordado':'○ não abordado'}</span></div>
-    <div class="mt"><span>${l.bairro}</span></div>
+    <div class="mt"><span>${l.bairro}</span>${l.dono?`<span class="donobadge">${l.dono}</span>`:''}</div>
     ${l.nextDate?`<div class="nx ${due?'due':''}">→ ${l.next||'ação'} · ${l.nextDate}${due?' ⚠':''}</div>`:''}
   </div>`;
 }
@@ -690,6 +735,13 @@ function openLead(id){
      <div class="apprtoggle ${isAbordado(l)?'is-on':''}">
        <div class="st"><span class="dot"></span>${isAbordado(l)?'Lead já abordado':'Lead ainda não abordado'}</div>
        <button class="apprbtn ${isAbordado(l)?'off':''}" onclick="toggleAbordado('${id}')">${isAbordado(l)?'Desmarcar':'Marcar como abordado'}</button>
+     </div>
+     <div class="fld"><label>Quem está prospectando</label>
+       <select onchange="setDono('${id}',this.value)">
+         <option value="" ${!l.dono?'selected':''}>— ninguém</option>
+         ${state.prospectores.map(p=>`<option ${l.dono===p?'selected':''}>${p}</option>`).join('')}
+         <option value="__add">＋ adicionar nome…</option>
+       </select>
      </div>
      <div class="fld"><label>Etapa do funil</label>
        <div class="stagerow">${STAGES.map(s=>`<button class="${l.stage===s.k?'on':''}" onclick="setStage('${id}','${s.k}')">${s.n}. ${s.t}</button>`).join('')}</div>
@@ -777,9 +829,10 @@ function calc(){
       <div class="bignum">${Math.ceil(perDay)}</div>
       <div class="note">toques novos por dia útil (${days} dias)</div>
     </div>`;
-  const setup=goal*2000;
-  const recmes=goal*1000;
-  const ac12=goal*2000*12 + 1000*goal*(12*13/2); // setup todo mês + recorrência acumulando
+  const pSetup=state.config.setup, pRec=state.config.rec;
+  const setup=goal*pSetup;
+  const recmes=goal*pRec;
+  const ac12=goal*pSetup*12 + pRec*goal*(12*13/2); // setup todo mês + recorrência acumulando
   document.getElementById('revout').innerHTML=`
     <div class="grid" style="grid-template-columns:repeat(3,1fr)">
       <div><div class="note">Receita de setup / mês</div><div class="bignum" style="font-size:26px">R$ ${setup.toLocaleString('pt-BR')}</div></div>
@@ -798,6 +851,78 @@ function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();renderAll();toast('Dados importados');}catch(err){toast('Arquivo inválido');}};r.readAsText(f);}
 function resetData(){if(confirm('Voltar aos 155 leads originais? Suas anotações e o progresso do funil serão apagados.')){state={leads:JSON.parse(JSON.stringify(LEADS_SEED)),checks:{}};save();renderAll();toast('Funil resetado');}}
 
+/* ---------- ICP ---------- */
+const ICP_DATA=[
+ {n:1,titulo:"Tem Perfil do Google, mas não tem site",estrelas:5,cor:"var(--quente)",facil:"Provavelmente o mais fácil de fechar — problema visível em 30s.",
+  situacao:["Já entende a importância da presença digital","Já aparece no Google","Ainda não possui um ativo próprio"],
+  dor:["Falta de autoridade","Falta de controle sobre a presença digital"],
+  oferta:["Criação de site + integração com o Perfil da Empresa no Google"]},
+ {n:2,titulo:"Tem site, mas é antigo / pouca credibilidade",estrelas:4,cor:"var(--morno)",facil:"Dá pra mostrar o problema visualmente — gera muita curiosidade.",
+  situacao:["Já investiu em site","O design parece antigo","Não tem foco em conversão","Não destaca especialidades ou diferenciais"],
+  dor:["Autoridade"],
+  oferta:["Redesign estratégico + SEO"]},
+ {n:3,titulo:"Tem site e Perfil do Google, mas pouca visibilidade local",estrelas:3,cor:"var(--frio)",facil:"Mais difícil: exige explicar SEO e educar o cliente.",
+  situacao:["Estrutura já existe","Site publicado","Perfil criado","Não aparece bem nas buscas locais"],
+  dor:["Visibilidade"],
+  oferta:["SEO local","Otimização do Perfil da Empresa","SEO on-page"]},
+];
+function renderICP(){
+  const stars=n=>'⭐'.repeat(n)+'<span style="opacity:.25">'+'⭐'.repeat(5-n)+'</span>';
+  const li=a=>a.map(x=>`<li>${x}</li>`).join('');
+  document.getElementById('icpwrap').innerHTML=
+   `<div class="card pad" style="margin-bottom:16px;border-left:3px solid var(--accent)">
+      <b class="disp">Onde focar o esforço:</b> aposte <b>80% nos ICP 1 e 2</b> — eles têm um problema visível e o caminho até o fechamento é mais curto. O ICP 3 exige mais análise e educação do cliente sobre SEO.
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+    ${ICP_DATA.map(i=>`
+      <div class="card icp" style="border-color:${i.cor}">
+        <div class="h"><span class="num" style="color:${i.cor}">${i.n}</span><h3>${i.titulo}</h3></div>
+        <div class="stars">${stars(i.estrelas)}</div>
+        <div class="facil">${i.facil}</div>
+        <div class="icpcol">Situação</div><ul class="li">${li(i.situacao)}</ul>
+        <div class="icpcol">Dor principal</div><ul class="li">${li(i.dor)}</ul>
+        <div class="icpcol">Oferta</div>${i.oferta.map(o=>`<div class="icpoffer">${o}</div>`).join('')}
+      </div>`).join('')}
+    </div>`;
+}
+
+/* ---------- Problemas ---------- */
+const PROBLEMS_DATA=[{"cat": "Autoridade", "problema": "Site não transmite confiança", "causa": "Ausência de provas de autoridade", "impacto": "Paciente procura outros profissionais", "acao": "Reestruturação do site com foco em credibilidade"}, {"cat": "Autoridade", "problema": "Poucas avaliações no Google", "causa": "Ausência de estratégia de solicitação", "impacto": "Menor confiança do paciente", "acao": "Estruturar processo de avaliações"}, {"cat": "Autoridade", "problema": "Site não destaca especialidades e diferenciais", "causa": "Comunicação genérica", "impacto": "Dificuldade de percepção de valor", "acao": "Melhorar posicionamento e mensagem"}, {"cat": "Autoridade", "problema": "Site sem páginas de especialidade", "causa": "Falta de conteúdo específico sobre os atendimentos", "impacto": "Menos relevância para buscas locais", "acao": "Criação de páginas otimizadas"}, {"cat": "Autoridade", "problema": "Site sem prova social", "causa": "Ausência de depoimentos, avaliações ou diferenciais", "impacto": "Menor confiança na tomada de decisão", "acao": "Inserção de elementos de autoridade"}, {"cat": "Visibilidade", "problema": "Perfil do Google mal otimizado", "causa": "Informações incompletas, poucas avaliações, categorias erradas", "impacto": "Menos visibilidade local", "acao": "Otimização completa do perfil"}, {"cat": "Visibilidade", "problema": "Pouca visibilidade no Google", "causa": "SEO inexistente ou perfil do Google mal otimizado", "impacto": "Menos oportunidades de ser encontrado", "acao": "SEO local e otimização do perfil"}, {"cat": "Visibilidade", "problema": "Concorrentes aparecem primeiro no Google", "causa": "Presença digital mais forte", "impacto": "Menor exposição para potenciais pacientes", "acao": "Estratégia de posicionamento local"}, {"cat": "Visibilidade", "problema": "Perfil do Google pouco atrativo", "causa": "Falta de fotos, avaliações ou informações", "impacto": "Menor taxa de contato", "acao": "Otimização completa do perfil"}, {"cat": "Visibilidade", "problema": "Não aparece nas buscas da cidade", "causa": "SEO local inexistente", "impacto": "Pacientes encontram concorrentes primeiro", "acao": "SEO on-page + Perfil da Empresa no Google"}, {"cat": "Visibilidade", "problema": "Site sem SEO básico", "causa": "Títulos, descrições e estrutura não otimizados", "impacto": "Menor potencial de visibilidade no Google", "acao": "SEO on-page + Perfil da Empresa no Google"}, {"cat": "Visibilidade", "problema": "Perfil do Google incompleto", "causa": "Informações faltando ou mal configuradas", "impacto": "Menor destaque nas buscas locais", "acao": "Otimização do perfil"}, {"cat": "Visibilidade", "problema": "Perfil do Google sem fotos profissionais", "causa": "Perfil visualmente pobre", "impacto": "Menor credibilidade", "acao": "Atualização das imagens"}, {"cat": "Visibilidade", "problema": "Instagram sem posicionamento claro", "causa": "Comunicação genérica", "impacto": "Dificuldade de entender a especialidade", "acao": "Ajuste de posicionamento"}, {"cat": "Visibilidade", "problema": "Baixa visibilidade local no Google", "causa": "SEO local inexistente, Perfil da Empresa pouco otimizado ou concorrência melhor posicionada", "impacto": "Menor exposição para pacientes que pesquisam por psiquiatras na região", "acao": "Otimização do Perfil da Empresa no Google e estratégia de SEO local"}, {"cat": "Visibilidade", "problema": "Perfil do Google sem publicações recentes", "causa": "Perfil abandonado ou sem manutenção", "impacto": "Menor engajamento e atualização para o Google", "acao": "Criação de calendário de publicações"}, {"cat": "Visibilidade", "problema": "Concorrentes mais bem posicionados no Google", "causa": "Investimento em SEO e presença digital mais estruturada", "impacto": "Pacientes encontram outros profissionais primeiro", "acao": "Estratégia de posicionamento local"}, {"cat": "Facilidade de Contato", "problema": "Dificuldade para o paciente entrar em contato", "causa": "WhatsApp escondido ou agendamento confuso", "impacto": "Possível perda de consultas", "acao": "Melhorar fluxo de contato e agendamento"}, {"cat": "Facilidade de Contato", "problema": "Site sem foco em conversão", "causa": "Estrutura criada apenas para informar", "impacto": "Menor geração de contatos", "acao": "Reestruturação da página"}, {"cat": "Facilidade de Contato", "problema": "Agendamento difícil de encontrar", "causa": "Botões escondidos ou fluxo confuso", "impacto": "Possível perda de contatos", "acao": "Simplificação do processo de agendamento"}, {"cat": "Não possui site", "problema": "Não possui site profissional", "causa": "Dependência apenas de redes sociais ou plataformas de terceiros", "impacto": "Menor controle da presença digital e perda de oportunidades para fortalecer a autoridade profissional", "acao": "Criação de um site profissional otimizado para conversão e SEO"}, {"cat": "Outros", "problema": "Presença digital inconsistente", "causa": "Site, Instagram e Google sem integração", "impacto": "Menor percepção de profissionalismo", "acao": "Padronização da comunicação digital"}, {"cat": "Outros", "problema": "Concorrentes mais visíveis", "causa": "Investiram em SEO e posicionamento digital", "impacto": "Perda constante de pacientes", "acao": "Melhorar posicionamento orgânico"}, {"cat": "Outros", "problema": "Site lento", "causa": "Hospedagem ruim, imagens pesadas, ausência de cache", "impacto": "Pacientes abandonam o site", "acao": "Otimização de performance"}, {"cat": "Outros", "problema": "Experiência ruim no celular", "causa": "Site não responsivo", "impacto": "Perda de contatos mobile", "acao": "Ajustes de usabilidade mobile"}, {"cat": "Outros", "problema": "Pacientes não encontram informações importantes", "causa": "Estrutura confusa", "impacto": "Dúvidas e abandono", "acao": "Melhorar arquitetura e navegação"}, {"cat": "Outros", "problema": "Concorrência crescente na região", "causa": "Outros psiquiatras investindo em marketing", "impacto": "Redução da participação no mercado local", "acao": "Estratégia contínua de SEO"}, {"cat": "Outros", "problema": "Ausência de chamadas para ação", "causa": "Site não direciona o usuário para agendar", "impacto": "Menos oportunidades de contato", "acao": "Implementar CTAs estratégicos"}, {"cat": "Outros", "problema": "Instagram sem link estratégico", "causa": "Falta de direcionamento para WhatsApp ou site", "impacto": "Perda de oportunidades de contato", "acao": "Estruturação da bio e links"}, {"cat": "Outros", "problema": "Identidade visual inconsistente", "causa": "Site, Google e Instagram sem padrão", "impacto": "Menor percepção de profissionalismo", "acao": "Padronização da presença digital"}, {"cat": "Outros", "problema": "Site sem versão mobile otimizada", "causa": "Problemas de navegação no celular", "impacto": "Experiência ruim para grande parte dos visitantes", "acao": "Otimização mobile"}, {"cat": "Outros", "problema": "Paciente não encontra informações rapidamente", "causa": "Estrutura confusa", "impacto": "Abandono da navegação", "acao": "Melhorar usabilidade e experiência"}, {"cat": "Outros", "problema": "Site sem conteúdo educativo", "causa": "Ausência de páginas ou artigos sobre os temas atendidos", "impacto": "Menor autoridade percebida e menos oportunidades de ranqueamento", "acao": "Estratégia de conteúdo otimizado para SEO"}];
+let probCat='all';
+function setProbCat(c){probCat=c;renderProblemas();}
+function renderProblemas(){
+  const cats=['all',...[...new Set(PROBLEMS_DATA.map(p=>p.cat))]];
+  const lbl=c=>c==='all'?`Todas (${PROBLEMS_DATA.length})`:`${c} (${PROBLEMS_DATA.filter(p=>p.cat===c).length})`;
+  document.getElementById('probbar').innerHTML=cats.map(c=>`<button class="chip ${probCat===c?'on':''}" onclick="setProbCat('${c.replace(/'/g,"\\'")}')">${lbl(c)}</button>`).join('');
+  const list=PROBLEMS_DATA.filter(p=>probCat==='all'||p.cat===probCat);
+  document.getElementById('probwrap').innerHTML=`<div class="grid" style="grid-template-columns:repeat(2,1fr)">${list.map(p=>`
+    <div class="card prob">
+      <span class="probcat">${p.cat}</span>
+      <div class="pq">${p.problema}</div>
+      <div class="probline"><b>Causa</b><span>${p.causa}</span></div>
+      <div class="probline"><b>Impacto</b><span>${p.impacto}</span></div>
+      <div class="probline acao"><b>Ação</b><span>${p.acao}</span></div>
+    </div>`).join('')}</div>`;
+}
+
+/* ---------- prospector & preço ---------- */
+let curProsp='all';
+function setDono(id,v){
+  const l=state.leads.find(x=>x.id===id); if(!l)return;
+  if(v==='__add'){const nome=(prompt('Nome do novo prospector:')||'').trim(); if(!nome){openLead(id);return;} if(!state.prospectores.includes(nome))state.prospectores.push(nome); l.dono=nome;}
+  else l.dono=v;
+  save();openLead(id);renderBoard();
+}
+function setCfg(){
+  const s=parseFloat(document.getElementById('c_setup').value)||0;
+  const r=parseFloat(document.getElementById('c_rec').value)||0;
+  state.config.setup=s;state.config.rec=r;save();calc();renderPainel();
+}
+function syncCfgInputs(){
+  const a=document.getElementById('c_setup'),b=document.getElementById('c_rec');
+  if(a)a.value=state.config.setup; if(b)b.value=state.config.rec;
+}
+
 /* ---------- sincronização em nuvem (Supabase) ---------- */
 const SB_URL="https://wsuhvkgstsxpjvawqfqa.supabase.co/rest/v1";
 const SB_KEY="sb_publishable_W07okea1xkCN6MQdFECMAA_tO3CbuEr";
@@ -809,11 +934,11 @@ function hasMeaningfulData(s){return (s.leads||[]).some(l=>l.stage!=='prospeccao
 async function cloudGet(){const r=await fetch(`${SB_URL}/cockpit_state?id=eq.${SB_ROW}&select=data,updated_at`,{headers:SB_HEAD,cache:'no-store'});if(!r.ok)throw new Error('GET '+r.status);const rows=await r.json();return rows[0]||null;}
 async function cloudPush(){try{setSync('sync');const body=[{id:SB_ROW,data:state,updated_at:new Date().toISOString()}];const r=await fetch(`${SB_URL}/cockpit_state`,{method:'POST',headers:{...SB_HEAD,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(body)});if(!r.ok)throw new Error('POST '+r.status);const rows=await r.json();if(rows[0])cloudStamp=rows[0].updated_at;setSync('ok');}catch(e){setSync('err');}}
 function schedulePush(){pushPending=true;clearTimeout(pushTimer);pushTimer=setTimeout(async()=>{pushPending=false;await cloudPush();},800);}
-function applyRemote(data,stamp){cloudStamp=stamp;state=data;state.leads.forEach(l=>{if(l.abordado===undefined)l.abordado=l.stage!=='prospeccao';});try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}renderAll();}
+function applyRemote(data,stamp){cloudStamp=stamp;state=ensureState(data);try{localStorage.setItem(LSKEY,JSON.stringify(state));}catch(e){}renderAll();}
 async function pollCloud(){if(pushPending||pulling)return;pulling=true;try{const row=await cloudGet();if(row&&row.updated_at&&row.updated_at!==cloudStamp){if(JSON.stringify(row.data)!==JSON.stringify(state))applyRemote(row.data,row.updated_at);else cloudStamp=row.updated_at;}setSync('ok');}catch(e){setSync('err');}pulling=false;}
 async function initSync(){setSync('sync');try{const row=await cloudGet();if(row&&row.data){applyRemote(row.data,row.updated_at);}else if(hasMeaningfulData(state)){await cloudPush();}else{setSync('ok');}}catch(e){setSync('err');}setInterval(pollCloud,7000);}
 
-function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();}
+function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();renderICP();renderProblemas();syncCfgInputs();}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1900);}
 
 renderAll();
