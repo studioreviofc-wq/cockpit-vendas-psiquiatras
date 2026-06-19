@@ -145,6 +145,15 @@ main{padding:0;min-width:0}
 .diagbtn{width:100%;border:0;background:var(--accent);color:#fff;font-family:"Space Grotesk";font-weight:600;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;transition:.12s}
 .diagbtn:hover{background:var(--accent2)}
 .donobadge{font-size:9.5px;font-family:"JetBrains Mono";padding:1px 6px;border-radius:20px;background:#ECE9FB;color:#5B43B5;border:1px solid #D9D2F4}
+.pricetag{font-size:9.5px;font-family:"JetBrains Mono";padding:1px 6px;border-radius:20px;background:var(--accent-soft);color:var(--accent);border:1px solid #BEE2D6}
+.marcodots{display:flex;gap:4px;margin-top:7px}
+.marcodots .md{width:8px;height:8px;border-radius:50%;background:var(--line);border:1px solid #cfd6df}
+.marcodots .md.on{background:var(--accent2);border-color:var(--accent)}
+.marcos{display:flex;flex-direction:column;gap:2px}
+.marco{display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;cursor:pointer;background:var(--panel)}
+.marco.on{background:var(--accent-soft);border-color:#BEE2D6;color:#0B5746;font-weight:500}
+.marco input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.marco .mdate{margin-left:auto;font-family:"JetBrains Mono";font-size:10.5px;color:var(--muted)}
 .icp{padding:18px 20px;border-top:3px solid}
 .icp .h{display:flex;align-items:center;gap:10px}
 .icp .num{font-family:"Space Grotesk";font-weight:700;font-size:22px;width:30px}
@@ -340,10 +349,10 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
             <button class="yrbtn" onclick="dashYear(-1)">◀</button>
             <b id="dashYearLbl" class="disp" style="font-size:16px;min-width:54px;text-align:center"></b>
             <button class="yrbtn" onclick="dashYear(1)">▶</button>
-            <button class="diagbtn" style="width:auto;margin-left:auto;padding:8px 14px" onclick="pullFunil()">⤓ Puxar do funil → mês atual</button>
+            <span class="note" style="margin-left:auto;font-size:11.5px;max-width:340px;text-align:right">Números em <b>cinza</b> = automáticos (contados dos marcos dos leads, pelo mês). Digite por cima para ajustar manualmente.</span>
           </div>
           <div style="overflow-x:auto"><table class="dash" id="dashTable"></table></div>
-          <p class="note" style="margin-top:10px"><b>Taxa de Conversão</b> = Negócios Fechados ÷ Abordagens (automática). O botão <b>Puxar do funil</b> preenche o mês atual com o snapshot de hoje (Abordagens, Reuniões, Propostas e Fechados derivados das etapas). <b>Respostas</b> e <b>Reuniões Realizadas</b> são estimativas — ajuste manualmente. Tudo sincroniza na nuvem.</p>
+          <p class="note" style="margin-top:10px">O dashboard <b>se preenche sozinho</b>: cada marco que você assinala no lead (Respondeu, Reunião, Proposta, Fechado) é contado no mês em que foi marcado. <b>Receita</b> = soma do preço dos leads fechados no mês. <b>Taxa de Conversão</b> = Fechados ÷ Abordagens. Pode sobrescrever qualquer célula digitando (útil para meses passados). Tudo sincroniza na nuvem.</p>
         </div>
         <div class="sect"><span class="n">▲</span><h3>Seu funil agora</h3><span class="ln"></span></div>
         <div class="card pad"><div class="funnel" id="funnel"></div></div>
@@ -616,7 +625,13 @@ function ensureState(s){
   s.config=Object.assign({setup:1500,rec:1000},s.config||{});
   s.prospectores=(s.prospectores&&s.prospectores.length)?s.prospectores:['Renan','Vinicius'];
   s.metrics=s.metrics||{};
-  s.leads.forEach(l=>{ if(l.abordado===undefined) l.abordado=l.stage!=='prospeccao'; if(l.dono===undefined) l.dono=''; });
+  const hoje=new Date().toISOString().slice(0,10);
+  s.leads.forEach(l=>{
+    if(l.abordado===undefined) l.abordado=l.stage!=='prospeccao';
+    if(l.dono===undefined) l.dono='';
+    if(l.preco===undefined||l.preco==='') l.preco=(s.config.setup||1500);
+    if(!l.marcos) l.marcos={abordado:l.abordado?hoje:null,respondeu:null,reuniao_ag:null,reuniao_re:null,proposta:null,fechado:null};
+  });
   return s;
 }
 function load(){
@@ -659,12 +674,14 @@ function renderPainel(){
   const quentes=L.filter(l=>l.tier==='quente').length;
   const naoAbordados=L.filter(l=>!isAbordado(l)).length;
   const oport=L.filter(l=>['apresentacao','proposta','fechamento','posvenda'].includes(l.stage)).length;
-  const fechados=byStage('posvenda');
+  const fechadosLeads=L.filter(l=>l.marcos&&l.marcos.fechado);
+  const fechados=fechadosLeads.length;
+  const receitaFech=fechadosLeads.reduce((s,l)=>s+leadPreco(l),0);
   const kpis=[
     {l:"Leads no funil",v:L.length,d:`${quentes} quentes · ${L.length-quentes} aquecer`},
     {l:"Não abordados",v:naoAbordados,d:`${L.length-naoAbordados} já abordados · sem 1º contato`},
     {l:"Oportunidades qualificadas",v:oport,d:"a métrica-rainha do livro"},
-    {l:"Clientes fechados",v:fechados,d:`R$ ${(fechados*state.config.setup).toLocaleString('pt-BR')} em setup`}
+    {l:"Clientes fechados",v:fechados,d:`R$ ${receitaFech.toLocaleString('pt-BR')} fechado`}
   ];
   document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="card kpi"><div class="accentbar"></div><div class="l">${k.l}</div><div class="v">${k.v}</div><div class="d">${k.d}</div></div>`).join('');
   document.getElementById('principles').innerHTML=PRINCIPLES.map(p=>`<li style="margin:9px 0">${p}</li>`).join('');
@@ -708,14 +725,15 @@ function cardHTML(l){
   return `<div class="lead ${TIERCLASS[l.tier]}" draggable="true" data-id="${l.id}">
     <div class="nm">${l.nome}</div>
     <div class="mt"><span class="pill ${TIERCLASS[l.tier]}">${l.tier}</span><span class="appr ${isAbordado(l)?'on':''}">${isAbordado(l)?'✓ abordado':'○ não abordado'}</span></div>
-    <div class="mt"><span>${l.bairro}</span>${l.dono?`<span class="donobadge">${l.dono}</span>`:''}</div>
+    <div class="mt"><span>${l.bairro}</span>${l.dono?`<span class="donobadge">${l.dono}</span>`:''}<span class="pricetag">R$ ${Number(leadPreco(l)).toLocaleString('pt-BR')}</span></div>
+    <div class="marcodots" title="Marcos">${MARCOS.map(mo=>`<span class="md ${(l.marcos||{})[mo.k]?'on':''}"></span>`).join('')}</div>
     ${l.nextDate?`<div class="nx ${due?'due':''}">→ ${l.next||'ação'} · ${l.nextDate}${due?' ⚠':''}</div>`:''}
   </div>`;
 }
 function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag')}
 function dragLeave(e){e.currentTarget.classList.remove('drag')}
 function drop(e){e.preventDefault();e.currentTarget.classList.remove('drag');const id=e.dataTransfer.getData('id');const st=e.currentTarget.dataset.stage;moveLead(id,st);}
-function moveLead(id,stage){const l=state.leads.find(x=>x.id===id);if(l&&l.stage!==stage){l.stage=stage;if(stage!=='prospeccao')l.abordado=true;save();renderBoard();toast(`${l.nome} → ${STAGES.find(s=>s.k===stage).t}`);}}
+function moveLead(id,stage){const l=state.leads.find(x=>x.id===id);if(l&&l.stage!==stage){l.stage=stage;if(stage!=='prospeccao'){l.abordado=true;l.marcos=l.marcos||{};if(!l.marcos.abordado)l.marcos.abordado=today();}save();renderBoard();renderPainel();renderDash();toast(`${l.nome} → ${STAGES.find(s=>s.k===stage).t}`);}}
 
 /* ---------- spine ---------- */
 function renderSpine(){
@@ -756,9 +774,10 @@ function openLead(id){
        <span class="k">Instagram</span><span>${l.instagram||'—'}</span>
        <span class="k">Site</span><span>${l.site?(l.site.startsWith('http')?`<a href="${l.site}" target="_blank">${l.site}</a>`:l.site):'— sem site'}</span>
      </div>
-     <div class="apprtoggle ${isAbordado(l)?'is-on':''}">
-       <div class="st"><span class="dot"></span>${isAbordado(l)?'Lead já abordado':'Lead ainda não abordado'}</div>
-       <button class="apprbtn ${isAbordado(l)?'off':''}" onclick="toggleAbordado('${id}')">${isAbordado(l)?'Desmarcar':'Marcar como abordado'}</button>
+     <div class="fld"><label>Marcos do lead — alimentam o dashboard automaticamente</label>
+       <div class="marcos">
+         ${MARCOS.map(mo=>{const d=(l.marcos||{})[mo.k];return `<label class="marco ${d?'on':''}"><input type="checkbox" ${d?'checked':''} onchange="toggleMarco('${id}','${mo.k}',this.checked)"><span>${mo.t}</span>${d?`<span class="mdate">${d.slice(8,10)}/${d.slice(5,7)}</span>`:''}</label>`;}).join('')}
+       </div>
      </div>
      <div class="fld"><label>Quem está prospectando</label>
        <select onchange="setDono('${id}',this.value)">
@@ -766,6 +785,9 @@ function openLead(id){
          ${state.prospectores.map(p=>`<option ${l.dono===p?'selected':''}>${p}</option>`).join('')}
          <option value="__add">＋ adicionar nome…</option>
        </select>
+     </div>
+     <div class="fld"><label>Preço estipulado (R$)</label>
+       <input type="number" min="0" value="${l.preco}" oninput="setPreco('${id}',this.value)">
      </div>
      <div class="fld"><label>Etapa do funil</label>
        <div class="stagerow">${STAGES.map(s=>`<button class="${l.stage===s.k?'on':''}" onclick="setStage('${id}','${s.k}')">${s.n}. ${s.t}</button>`).join('')}</div>
@@ -781,7 +803,7 @@ function openLead(id){
   drawer.classList.add('on');document.getElementById('scrim').classList.add('on');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on');renderBoard();renderPainel();}
-function setStage(id,st){const l=state.leads.find(x=>x.id===id);l.stage=st;if(st!=='prospeccao')l.abordado=true;save();openLead(id);toast('Etapa atualizada');}
+function setStage(id,st){const l=state.leads.find(x=>x.id===id);l.stage=st;if(st!=='prospeccao'){l.abordado=true;l.marcos=l.marcos||{};if(!l.marcos.abordado)l.marcos.abordado=today();}save();openLead(id);renderPainel();renderDash();toast('Etapa atualizada');}
 function toggleAbordado(id){const l=state.leads.find(x=>x.id===id);l.abordado=!isAbordado(l);save();openLead(id);renderPainel();toast(l.abordado?'Marcado como abordado':'Marcado como não abordado');}
 function setField(id,f,v){const l=state.leads.find(x=>x.id===id);l[f]=v;save();}
 function toggleCheck(id,key,val){state.checks[id]=state.checks[id]||{};state.checks[id][key]=val;save();const el=event.target.closest('.check');el.classList.toggle('done',val);}
@@ -946,46 +968,74 @@ function syncCfgInputs(){
   const a=document.getElementById('c_setup'),b=document.getElementById('c_rec');
   if(a)a.value=state.config.setup; if(b)b.value=state.config.rec;
 }
+function today(){return new Date().toISOString().slice(0,10);}
+function leadPreco(l){return (l.preco!=null&&l.preco!=='')?Number(l.preco):(state.config.setup||1500);}
+function setPreco(id,v){const l=state.leads.find(x=>x.id===id);if(!l)return;l.preco=parseFloat(v)||0;save();renderPainel();renderDash();}
+
+/* ---------- marcos do lead (alimentam o dashboard) ---------- */
+const MARCOS=[
+ {k:'abordado',col:'ab',t:'Abordado'},
+ {k:'respondeu',col:'resp',t:'Respondeu'},
+ {k:'reuniao_ag',col:'ragend',t:'Reunião agendada'},
+ {k:'reuniao_re',col:'rreal',t:'Reunião realizada'},
+ {k:'proposta',col:'prop',t:'Proposta enviada'},
+ {k:'fechado',col:'fech',t:'Negócio fechado'},
+];
+const COL2MARCO={ab:'abordado',resp:'respondeu',ragend:'reuniao_ag',rreal:'reuniao_re',prop:'proposta',fech:'fechado'};
+function ym(d){return (d||'').slice(0,7);}
+function toggleMarco(id,k,checked){
+  const l=state.leads.find(x=>x.id===id);if(!l)return;l.marcos=l.marcos||{};
+  l.marcos[k]=checked?today():null;
+  if(k==='abordado')l.abordado=checked;
+  save();openLead(id);renderBoard();renderPainel();renderDash();
+}
+function autoCount(y,m,col){
+  const key=COL2MARCO[col];if(!key)return 0;
+  const tgt=y+'-'+String(m).padStart(2,'0');
+  return state.leads.filter(l=>l.marcos&&ym(l.marcos[key])===tgt).length;
+}
+function autoReceita(y,m){
+  const tgt=y+'-'+String(m).padStart(2,'0');
+  return state.leads.filter(l=>l.marcos&&ym(l.marcos.fechado)===tgt).reduce((s,l)=>s+leadPreco(l),0);
+}
+function cellVal(y,m,col){
+  const o=(state.metrics[y]&&state.metrics[y][m])?state.metrics[y][m][col]:undefined;
+  if(o!=null&&o!=='')return Number(o);
+  return col==='receita'?autoReceita(y,m):autoCount(y,m,col);
+}
 
 /* ---------- dashboard mensal ---------- */
 let dashY=new Date().getFullYear();
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const DASHCOLS=[['ab','Abordagens'],['resp','Respostas'],['ragend','Reuniões Agend.'],['rreal','Reuniões Realiz.'],['prop','Propostas Env.'],['fech','Negócios Fech.']];
+const DASHCOLS=[['ab','Abordagens'],['resp','Respostas'],['ragend','Reuniões Agend.'],['rreal','Reuniões Realiz.'],['prop','Propostas Env.'],['fech','Negócios Fech.'],['receita','Receita R$']];
+function fmtR(n){return 'R$ '+(Number(n)||0).toLocaleString('pt-BR');}
 function metricCell(y,m){state.metrics[y]=state.metrics[y]||{};return state.metrics[y][m]=state.metrics[y][m]||{};}
-function convPct(c){return c.ab>0?Math.round((c.fech||0)/c.ab*100):0;}
-function setMetric(y,m,k,v){metricCell(y,m)[k]=parseInt(v)||0;save();recomputeDashTotals();}
+function convPctYM(y,m){const ab=cellVal(y,m,'ab');return ab>0?Math.round(cellVal(y,m,'fech')/ab*100):0;}
+function setMetric(y,m,k,v){const c=metricCell(y,m);if(v===''||v==null)delete c[k];else c[k]=parseInt(v)||0;save();recomputeDashTotals();}
 function recomputeDashTotals(){
   const tot={};DASHCOLS.forEach(([k])=>tot[k]=0);
-  const yObj=state.metrics[dashY]||{};
-  for(let m=1;m<=12;m++){const c=yObj[m]||{};DASHCOLS.forEach(([k])=>tot[k]+=(c[k]||0));const ce=document.getElementById('conv_'+m);if(ce)ce.textContent=convPct(c)+'%';}
-  DASHCOLS.forEach(([k])=>{const e=document.getElementById('tot_'+k);if(e)e.textContent=tot[k];});
+  for(let m=1;m<=12;m++){
+    DASHCOLS.forEach(([k])=>{tot[k]+=cellVal(dashY,m,k);const inp=document.getElementById(`in_${m}_${k}`);if(inp)inp.placeholder=(k==='receita'?autoReceita(dashY,m):autoCount(dashY,m,k));});
+    const ce=document.getElementById('conv_'+m);if(ce)ce.textContent=convPctYM(dashY,m)+'%';
+  }
+  DASHCOLS.forEach(([k])=>{const e=document.getElementById('tot_'+k);if(e)e.textContent=(k==='receita'?fmtR(tot[k]):tot[k]);});
   const tc=document.getElementById('tot_conv');if(tc)tc.textContent=(tot.ab>0?Math.round(tot.fech/tot.ab*100):0)+'%';
 }
 function dashYear(d){dashY+=d;renderDash();}
 function renderDash(){
   const lbl=document.getElementById('dashYearLbl');if(!lbl)return;lbl.textContent=dashY;
   const cur=(dashY===new Date().getFullYear())?new Date().getMonth()+1:-1;
-  const tot={};DASHCOLS.forEach(([k])=>tot[k]=0);
   let body='';
   for(let m=1;m<=12;m++){
-    const c=metricCell(dashY,m);DASHCOLS.forEach(([k])=>tot[k]+=(c[k]||0));
+    const ov=(state.metrics[dashY]&&state.metrics[dashY][m])?state.metrics[dashY][m]:{};
     body+=`<tr class="${m===cur?'cur':''}"><td class="mname">${MESES[m-1]}</td>`+
-      DASHCOLS.map(([k])=>`<td><input type="number" min="0" value="${c[k]||''}" oninput="setMetric(${dashY},${m},'${k}',this.value)"></td>`).join('')+
-      `<td class="conv" id="conv_${m}">${convPct(c)}%</td></tr>`;
+      DASHCOLS.map(([k])=>{const auto=(k==='receita'?autoReceita(dashY,m):autoCount(dashY,m,k));const o=ov[k];return `<td><input id="in_${m}_${k}" type="number" min="0" value="${(o!=null&&o!=='')?o:''}" placeholder="${auto}" oninput="setMetric(${dashY},${m},'${k}',this.value)"></td>`;}).join('')+
+      `<td class="conv" id="conv_${m}">${convPctYM(dashY,m)}%</td></tr>`;
   }
+  const tot={};DASHCOLS.forEach(([k])=>{tot[k]=0;for(let m=1;m<=12;m++)tot[k]+=cellVal(dashY,m,k);});
   const tconv=tot.ab>0?Math.round(tot.fech/tot.ab*100):0;
-  body+=`<tr class="tot"><td>Total ${dashY}</td>`+DASHCOLS.map(([k])=>`<td id="tot_${k}">${tot[k]}</td>`).join('')+`<td class="conv" id="tot_conv">${tconv}%</td></tr>`;
+  body+=`<tr class="tot"><td>Total ${dashY}</td>`+DASHCOLS.map(([k])=>`<td id="tot_${k}">${k==='receita'?fmtR(tot[k]):tot[k]}</td>`).join('')+`<td class="conv" id="tot_conv">${tconv}%</td></tr>`;
   document.getElementById('dashTable').innerHTML=`<thead><tr><th>Mês</th>${DASHCOLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>Conversão</th></tr></thead><tbody>${body}</tbody>`;
-}
-function pullFunil(){
-  const now=new Date();dashY=now.getFullYear();const m=now.getMonth()+1;const c=metricCell(dashY,m);
-  const inSt=arr=>state.leads.filter(l=>arr.includes(l.stage)).length;
-  c.ab=state.leads.filter(isAbordado).length;
-  c.ragend=inSt(['apresentacao','proposta','fechamento','posvenda']);
-  c.rreal=inSt(['proposta','fechamento','posvenda']);
-  c.prop=inSt(['proposta','fechamento','posvenda']);
-  c.fech=inSt(['fechamento','posvenda']);
-  save();renderDash();toast('Mês atual preenchido com o snapshot do funil');
 }
 
 /* ---------- sincronização em nuvem (Supabase) ---------- */
