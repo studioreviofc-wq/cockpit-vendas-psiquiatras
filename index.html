@@ -159,6 +159,19 @@ main{padding:0;min-width:0}
 .probline{font-size:12px;display:flex;gap:8px;margin-top:3px;color:#3A4250}
 .probline b{color:var(--muted);font-weight:600;min-width:60px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding-top:1px}
 .probline.acao{color:var(--accent)}
+table.dash{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dash th{font-family:"Space Grotesk";font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);text-align:center;padding:6px 3px;border-bottom:1px solid var(--line);font-weight:600}
+table.dash th:first-child,table.dash td:first-child{text-align:left}
+table.dash td{padding:3px;border-bottom:1px solid var(--line);text-align:center}
+table.dash input{width:58px;text-align:center;font-family:"JetBrains Mono";font-size:12px;padding:5px 3px;border:1px solid transparent;border-radius:6px;background:var(--panel2);color:var(--ink)}
+table.dash input:focus{outline:none;border-color:var(--accent);background:#fff}
+table.dash .conv{font-family:"JetBrains Mono";font-weight:600;color:var(--accent)}
+table.dash .mname{font-family:"Space Grotesk";font-weight:600}
+table.dash tr.cur td{background:var(--accent-soft)}
+table.dash tr.tot{font-family:"Space Grotesk";font-weight:700}
+table.dash tr.tot td{border-top:2px solid var(--line);padding-top:8px}
+.yrbtn{border:1px solid var(--line);background:var(--panel);width:28px;height:28px;border-radius:7px;color:var(--muted);font-size:13px}
+.yrbtn:hover{border-color:var(--accent);color:var(--accent)}
 
 /* checklist */
 .check{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -321,7 +334,18 @@ ul.li{margin:0;padding-left:18px;font-size:13px} ul.li li{margin:5px 0}
 
       <!-- METRICAS -->
       <section class="view" id="v-metricas">
-        <div class="sect" style="margin-top:4px"><span class="n">▲</span><h3>Seu funil agora</h3><span class="ln"></span></div>
+        <div class="sect" style="margin-top:4px"><span class="n">▦</span><h3>Dashboard mensal de prospecção</h3><span class="ln"></span></div>
+        <div class="card pad">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <button class="yrbtn" onclick="dashYear(-1)">◀</button>
+            <b id="dashYearLbl" class="disp" style="font-size:16px;min-width:54px;text-align:center"></b>
+            <button class="yrbtn" onclick="dashYear(1)">▶</button>
+            <button class="diagbtn" style="width:auto;margin-left:auto;padding:8px 14px" onclick="pullFunil()">⤓ Puxar do funil → mês atual</button>
+          </div>
+          <div style="overflow-x:auto"><table class="dash" id="dashTable"></table></div>
+          <p class="note" style="margin-top:10px"><b>Taxa de Conversão</b> = Negócios Fechados ÷ Abordagens (automática). O botão <b>Puxar do funil</b> preenche o mês atual com o snapshot de hoje (Abordagens, Reuniões, Propostas e Fechados derivados das etapas). <b>Respostas</b> e <b>Reuniões Realizadas</b> são estimativas — ajuste manualmente. Tudo sincroniza na nuvem.</p>
+        </div>
+        <div class="sect"><span class="n">▲</span><h3>Seu funil agora</h3><span class="ln"></span></div>
         <div class="card pad"><div class="funnel" id="funnel"></div></div>
         <div class="sect"><span class="n">∑</span><h3>Calculadora de Receita Previsível — "esforço X → resultado Y"</h3><span class="ln"></span></div>
         <div class="grid calc">
@@ -923,6 +947,47 @@ function syncCfgInputs(){
   if(a)a.value=state.config.setup; if(b)b.value=state.config.rec;
 }
 
+/* ---------- dashboard mensal ---------- */
+let dashY=new Date().getFullYear();
+const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const DASHCOLS=[['ab','Abordagens'],['resp','Respostas'],['ragend','Reuniões Agend.'],['rreal','Reuniões Realiz.'],['prop','Propostas Env.'],['fech','Negócios Fech.']];
+function metricCell(y,m){state.metrics[y]=state.metrics[y]||{};return state.metrics[y][m]=state.metrics[y][m]||{};}
+function convPct(c){return c.ab>0?Math.round((c.fech||0)/c.ab*100):0;}
+function setMetric(y,m,k,v){metricCell(y,m)[k]=parseInt(v)||0;save();recomputeDashTotals();}
+function recomputeDashTotals(){
+  const tot={};DASHCOLS.forEach(([k])=>tot[k]=0);
+  const yObj=state.metrics[dashY]||{};
+  for(let m=1;m<=12;m++){const c=yObj[m]||{};DASHCOLS.forEach(([k])=>tot[k]+=(c[k]||0));const ce=document.getElementById('conv_'+m);if(ce)ce.textContent=convPct(c)+'%';}
+  DASHCOLS.forEach(([k])=>{const e=document.getElementById('tot_'+k);if(e)e.textContent=tot[k];});
+  const tc=document.getElementById('tot_conv');if(tc)tc.textContent=(tot.ab>0?Math.round(tot.fech/tot.ab*100):0)+'%';
+}
+function dashYear(d){dashY+=d;renderDash();}
+function renderDash(){
+  const lbl=document.getElementById('dashYearLbl');if(!lbl)return;lbl.textContent=dashY;
+  const cur=(dashY===new Date().getFullYear())?new Date().getMonth()+1:-1;
+  const tot={};DASHCOLS.forEach(([k])=>tot[k]=0);
+  let body='';
+  for(let m=1;m<=12;m++){
+    const c=metricCell(dashY,m);DASHCOLS.forEach(([k])=>tot[k]+=(c[k]||0));
+    body+=`<tr class="${m===cur?'cur':''}"><td class="mname">${MESES[m-1]}</td>`+
+      DASHCOLS.map(([k])=>`<td><input type="number" min="0" value="${c[k]||''}" oninput="setMetric(${dashY},${m},'${k}',this.value)"></td>`).join('')+
+      `<td class="conv" id="conv_${m}">${convPct(c)}%</td></tr>`;
+  }
+  const tconv=tot.ab>0?Math.round(tot.fech/tot.ab*100):0;
+  body+=`<tr class="tot"><td>Total ${dashY}</td>`+DASHCOLS.map(([k])=>`<td id="tot_${k}">${tot[k]}</td>`).join('')+`<td class="conv" id="tot_conv">${tconv}%</td></tr>`;
+  document.getElementById('dashTable').innerHTML=`<thead><tr><th>Mês</th>${DASHCOLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>Conversão</th></tr></thead><tbody>${body}</tbody>`;
+}
+function pullFunil(){
+  const now=new Date();dashY=now.getFullYear();const m=now.getMonth()+1;const c=metricCell(dashY,m);
+  const inSt=arr=>state.leads.filter(l=>arr.includes(l.stage)).length;
+  c.ab=state.leads.filter(isAbordado).length;
+  c.ragend=inSt(['apresentacao','proposta','fechamento','posvenda']);
+  c.rreal=inSt(['proposta','fechamento','posvenda']);
+  c.prop=inSt(['proposta','fechamento','posvenda']);
+  c.fech=inSt(['fechamento','posvenda']);
+  save();renderDash();toast('Mês atual preenchido com o snapshot do funil');
+}
+
 /* ---------- sincronização em nuvem (Supabase) ---------- */
 const SB_URL="https://wsuhvkgstsxpjvawqfqa.supabase.co/rest/v1";
 const SB_KEY="sb_publishable_W07okea1xkCN6MQdFECMAA_tO3CbuEr";
@@ -938,7 +1003,7 @@ function applyRemote(data,stamp){cloudStamp=stamp;state=ensureState(data);try{lo
 async function pollCloud(){if(pushPending||pulling)return;pulling=true;try{const row=await cloudGet();if(row&&row.updated_at&&row.updated_at!==cloudStamp){if(JSON.stringify(row.data)!==JSON.stringify(state))applyRemote(row.data,row.updated_at);else cloudStamp=row.updated_at;}setSync('ok');}catch(e){setSync('err');}pulling=false;}
 async function initSync(){setSync('sync');try{const row=await cloudGet();if(row&&row.data){applyRemote(row.data,row.updated_at);}else if(hasMeaningfulData(state)){await cloudPush();}else{setSync('ok');}}catch(e){setSync('err');}setInterval(pollCloud,7000);}
 
-function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();renderICP();renderProblemas();syncCfgInputs();}
+function renderAll(){renderPainel();renderBoard();renderPlaybook();renderScripts();renderFunnel();calc();renderBook();renderICP();renderProblemas();syncCfgInputs();renderDash();}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1900);}
 
 renderAll();
